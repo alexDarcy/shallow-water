@@ -32,26 +32,28 @@ function shallow1D
       uR = q2(i+1)/q1(i+1);
 
 
-      hstar = (uL-uR+2*(sqrt(g*hL)+sqrt(g*hR))^2/(16*g);
+      hstar = (uL-uR+2*(sqrt(g*hL)+sqrt(g*hR))^2)/(16*g);
       % TODO
 
       if (hstar > hL) 
         ustar = uL+2*sqrt(g*hL)-2*sqrt(g*hstar);
       else 
-        ustar = uL-(hstar-hL)*sqrt((g*(h+hL)/(2*hstar*hL)));
+        ustar = uL-(hstar-hL)*sqrt(g*(hstar+hL)/(2*hstar*hL));
       end
 
       if (hstar > hL) % shock wave 
         sLeft1 = (hstar*ustar-hL*uL)/(hstar-hL);
         sLeft2 = sLeft1 ;
       else % rarefaction wave
-      % TODO
+        sLeft1 = uL-sqrt(g*hL);
+        sLeft2 = ustar-sqrt(g*hstar);
       end
       if (hstar > hR) % shock wave 
         sRight1 = (hstar*ustar-hL*uL)/(hstar-hL);
         sRight2 = sRight1 ;
       else % rarefaction wave
-      % TODO
+        sRight1 = ustar-sqrt(g*hstar);
+        sRight2 = uR-sqrt(g*hR);
       end
 
       if (sLeft1 > 0)
@@ -61,7 +63,11 @@ function shallow1D
         q1(i) = hR;
         q2(i) = hR*uR;
       elseif (sLeft1 < 0 && sLeft2 > 0)
+        hTmp = (uL+2*sqrt(g*hL))^2/(9*g);
+        uTmp = uL+2*sqrt(g*hL)-2*sqrt(g*hTmp);
       elseif (sRight1 < 0 && sRight2 > 0)
+        hTmp = (uR-2*sqrt(g*hR))^2/(9*g);
+        uTmp = uL-2*sqrt(g*hL)+2*sqrt(g*hTmp);
       else
         q1(i) = hstar;
         q2(i) = hstar*ustar;
