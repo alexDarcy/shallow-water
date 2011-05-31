@@ -25,7 +25,8 @@ function shallow1D
     q2(i) = u(i)*h(i);
   end
 
-  for t=0:dt:10*dt
+  for t=0:dt:100*dt
+    printf('debut \n');
     for i=1:n-1
       hL = q1(i);
       uL = q2(i)/q1(i);
@@ -58,6 +59,7 @@ function shallow1D
         hstar = hstar - G/Gprime;
 
       end
+      hstar
 
       if (hstar <= hL) 
         ustar = uL+2*sqrt(g*hL)-2*sqrt(g*hstar);
@@ -100,22 +102,21 @@ function shallow1D
         uTmp = uL+2*sqrt(g*hL)-2*sqrt(g*hTmp);
       elseif (sRight1 < 0 && sRight2 > 0)
         hTmp = (uR-2*sqrt(g*hR))^2/(9*g);
-        uTmp = uL-2*sqrt(g*hL)+2*sqrt(g*hTmp);
+        uTmp = uL-2*sqrt(g*hR)+2*sqrt(g*hTmp);
       else
         hTmp = hstar;
         uTmp = hstar*ustar;
       end
-      q1(i) = hTmp;
-      q2(i) = hTmp*uTmp;
 
-      F1(i) = q2(i);
-      F2(i) = q2(i)^2/q1(i) + 0.5*g*q1(i)^2;
+      F1(i) = hTmp*uTmp;
+      F2(i) = hTmp*uTmp^2+0.5*g*hTmp^2;
     end
 
     for i=2:n-1
       q1(i) = q1(i) - dt/dx*(F1(i)-F1(i-1));
       q2(i) = q2(i) - dt/dx*(F2(i)-F2(i-1));
     end
+    q1
     plot(x,q1);
     drawnow;
   end
