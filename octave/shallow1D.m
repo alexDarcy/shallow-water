@@ -57,9 +57,7 @@ function shallow1D
         G = FL-FR;
         Gprime = FLprime-FRprime;
         hstar = hstar - G/Gprime;
-
       end
-      hstar
 
       if (hstar <= hL) 
         ustar = uL+2*sqrt(g*hL)-2*sqrt(g*hstar);
@@ -116,7 +114,6 @@ function shallow1D
       q1(i) = q1(i) - dt/dx*(F1(i)-F1(i-1));
       q2(i) = q2(i) - dt/dx*(F2(i)-F2(i-1));
     end
-    q1
     plot(x,q1);
     drawnow;
   end

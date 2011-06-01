@@ -1,18 +1,17 @@
 function shallow2D
   Lx = 1;
   Ly = 1;
-  nX = 3;
-  nY = 3;
+  nX = 10;
+  nY = 10;
   stepX = Lx/nX;
   stepY = Ly/nY;
   
   % Create mesh
   x = 0:stepX:Lx;
   y = 0:stepY:Ly;
-  for j=1:length(y)
-    for i=1:length(x)
-      z(i,j) = sin(x(i))*sin(y(i));
-    end
+  z = zeros(nX+1,nY+1);
+  for i=1:length(x)
+    z(i,:) = sin(x(i))*sin(y(:));
   end
   
   % Create mesh for visu
