@@ -1,4 +1,7 @@
-function shallow1D
+% 1D shallow water
+% All types of waves are computed
+
+function shallow1D_all
   clear all;
   Lx = 10;
   n = 100;
