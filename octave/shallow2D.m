@@ -8,18 +8,20 @@ function shallow2D
   % Initial disk
   xC = Lx/2;
   yC = Ly/2;
-  radius = 0.1;
+  radius = 3;
   stepX = Lx/n1;
   stepY = Ly/n2;
   h1 = 1;
   h0 = 0.5;
 
-  % Create mesh
-  x = 0:stepX:Lx;
+  % Create mesh with ghost cells
+  x = 0:stepX:Lx+stepX;
   y = 0:stepY:Ly;
   %z = zeros(nX+1,nY+1)
   nX = length(x);
   nY = length(y);
+  % For visu
+  limits = [0;Lx;0;Lx;0;1.5];
 
   for i=1:nX
     for j=1:nY
@@ -36,10 +38,6 @@ function shallow2D
     end
   end
 
-  surf(x,y,h);
-  view(110,10);
-  drawnow;
-
   q1 = h;
   for i=1:nX
     for j=1:nY
@@ -48,7 +46,16 @@ function shallow2D
     end
   end
 
-  for t=0:dt:150*dt
+  xCut = x(1:nX-1);
+  hCut = q1(1:nX-1,:);
+  surf(xCut,y,hCut);
+  view(110,10);
+  axis(limits);
+  print(strcat('movie/f',num2str(0),'.jpg'),'-djpg','-S1600,800');
+
+
+
+  for k=1:50
     for i=1:nX-1
       %for j=1:nY-1
       j = 1;
@@ -81,11 +88,13 @@ function shallow2D
       end
     end
 
-    surf(x,y,q1);
+    hCut = q1(1:nX-1,:);
+
+    surf(xCut,y,hCut);
+    axis(limits);
     view(110,10);
-    drawnow;
+    print(strcat('movie/f',num2str(k),'.jpg'),'-djpg','-S1600,800');
   end
-  %surf(x,y,q1);
 end
 
 function F = riemannX(uTilde, vTilde, cTilde, i, j, q1, q2, q3)
