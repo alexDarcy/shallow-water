@@ -15,7 +15,7 @@ function shallow2D(toPrint=0)
   h0 = 0.5;
 
   % Create mesh with ghost cells
-  x = 0:stepX:Lx+stepX;
+  x = -stepX:stepX:Lx+stepX;
   y = -stepY:stepY:Ly+stepY;
   %z = zeros(nX+1,nY+1)
   nX = length(x);
@@ -28,8 +28,8 @@ function shallow2D(toPrint=0)
       %dist = (x(i)-xC)^2 + (y(j)-yC)^2;
       %dist = sqrt(dist);
       %if (dist <= radius )
-      if (x(i) < Lx/2)
-      %if (y(j) < Ly/2)
+      %if (x(i) < Lx/2)
+      if (y(j) < Ly/2)
         h(i,j) = h1;
       else
         h(i,j) = h0;
@@ -47,9 +47,9 @@ function shallow2D(toPrint=0)
     end
   end
 
-  xCut = x(1:nX-1);
+  xCut = x(2:nX-1);
   yCut = y(2:nY-1);
-  hCut = q1(1:nX-1,2:nY-1);
+  hCut = q1(2:nX-1,2:nY-1);
   surf(xCut,yCut,hCut);
   view(110,10);
   axis(limits);
@@ -61,7 +61,7 @@ function shallow2D(toPrint=0)
 
 
 
-  for k=1:15
+  for k=1:150
     for i=1:nX-1
       for j=1:nY-1
         hL = q1(i,j);
@@ -89,20 +89,23 @@ function shallow2D(toPrint=0)
     end
 
 
-    for i=2:nX-1
-      for j=2:nY-1
-        q1(i,j) = q1(i,j) - dt/stepX*(F1(i)-F1(i-1));
-        q1(i,j) = q1(i,j) - dt/stepY*(G1(j)-G1(j-1));
+    for i=1:nX-1
+      for j=1:nY-1
+        if (i > 1)
+          q1(i,j) = q1(i,j) - dt/stepX*(F1(i)-F1(i-1));
+          q2(i,j) = q2(i,j) - dt/stepX*(F2(i)-F2(i-1));
+          q3(i,j) = q3(i,j) - dt/stepX*(F3(i)-F3(i-1));
+        end
 
-        q2(i,j) = q2(i,j) - dt/stepX*(F2(i)-F2(i-1));
-        q2(i,j) = q2(i,j) - dt/stepY*(G2(j)-G2(j-1));
-
-        q3(i,j) = q3(i,j) - dt/stepX*(F3(i)-F3(i-1));
-        q3(i,j) = q3(i,j) - dt/stepY*(G3(j)-G3(j-1));
+        if (j > 1)
+          q1(i,j) = q1(i,j) - dt/stepY*(G1(j)-G1(j-1));
+          q2(i,j) = q2(i,j) - dt/stepY*(G2(j)-G2(j-1));
+          q3(i,j) = q3(i,j) - dt/stepY*(G3(j)-G3(j-1));
+        end
       end
     end
 
-    hCut = q1(1:nX-1,2:nY-1);
+    hCut = q1(2:nX-1,2:nY-1);
 
     surf(xCut,yCut,hCut);
     axis(limits);
