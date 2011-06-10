@@ -28,15 +28,16 @@ function shallow2D(toPrint=0)
       %dist = (x(i)-xC)^2 + (y(j)-yC)^2;
       %dist = sqrt(dist);
       %if (dist <= radius )
-      %if (x(i) < Lx/2)
-      if (y(j) < Ly/2)
+      %if (abs(x(i)-xC) <= 3 && abs(y(j)-yC) <= 3)
+      if (x(i) < Lx/2 )
+      %if (x(i) < Lx/2 || y(j) < Ly/2)
         h(i,j) = h1;
       else
         h(i,j) = h0;
       end
-      u(i,j) = 0;
-      v(i,j) = 0;
     end
+    u(i,j) = 0;
+    v(i,j) = 0;
   end
 
   q1 = h;
@@ -51,6 +52,7 @@ function shallow2D(toPrint=0)
   yCut = y(2:nY-1);
   hCut = q1(2:nX-1,2:nY-1);
   surf(xCut,yCut,hCut);
+  %surf(x,y,h);
   view(110,10);
   axis(limits);
   if (toPrint > 0)
@@ -61,26 +63,15 @@ function shallow2D(toPrint=0)
 
 
 
-  for k=1:150
+  for k=1:100
     for i=1:nX-1
       for j=1:nY-1
-        hL = q1(i,j);
-        uL = q2(i,j)/q1(i,j);
-        vL = q3(i,j)/q1(i,j);
-        hR = q1(i+1,j);
-        uR = q2(i+1,j)/q1(i+1,j);
-        vR = q3(i+1,j)/q1(i+1,j);
-
-        hBar = 0.5*(hL+hR);
-        uTilde = (sqrt(hL)*uL+sqrt(hR)*uR)/(sqrt(hL)+sqrt(hR));
-        vTilde = (sqrt(hL)*vL+sqrt(hR)*vR)/(sqrt(hL)+sqrt(hR));
-        cTilde = sqrt(g*hBar);
-        FTmp = riemannX(uTilde, vTilde, cTilde, i, j, q1, q2, q3);
+        FTmp = riemannX(i, j, q1, q2, q3);
         F1(i) = FTmp(1);
         F2(i) = FTmp(2);
         F3(i) = FTmp(3);
 
-        GTmp = riemannY(uTilde, vTilde, cTilde, i, j, q1, q2, q3);
+        GTmp = riemannY(i, j, q1, q2, q3);
         G1(j) = GTmp(1);
         G2(j) = GTmp(2);
         G3(j) = GTmp(3);
@@ -105,9 +96,11 @@ function shallow2D(toPrint=0)
       end
     end
 
-    hCut = q1(2:nX-1,2:nY-1);
+    boundary(q1,q2,q3,nX,nY);
 
+    hCut = q1(2:nX-1,2:nY-1);
     surf(xCut,yCut,hCut);
+    %urf(x,y,h);
     axis(limits);
     view(110,10);
     if (toPrint > 0)
@@ -118,9 +111,50 @@ function shallow2D(toPrint=0)
   end
 end
 
+% interpolate boundary conditions
+function boundary(q1,q2,q3,nX,nY)
+  for j=1:nY
+    q1(1,j) = 2*q1(2,j) - q1(3,j);
+    q2(1,j) = 2*q2(2,j) - q2(3,j);
+    q3(1,j) = 2*q3(2,j) - q3(3,j);
+
+    q1(nX,j) = 2*q1(nX-1,j) - q1(nX-2,j);
+    q2(nX,j) = 2*q2(nX-1,j) - q2(nX-2,j);
+    q3(nX,j) = 2*q3(nX-1,j) - q3(nX-2,j);
+  end
+  for i=1:nX
+    q1(i,1) = 2*q1(i,2) - q1(i,3);
+    q2(i,1) = 2*q2(i,2) - q2(i,3);
+    q3(i,1) = 2*q3(i,2) - q3(i,3);
+
+    q1(i,nY) = 2*q1(i,nY-1) - q1(i,nY-2);
+    q2(i,nY) = 2*q2(i,nY-1) - q2(i,nY-2);
+    q3(i,nY) = 2*q3(i,nY-1) - q3(i,nY-2);
+  end
+end
+
+
+
 % Solves the Riemann problem on x
-function F = riemannX(uTilde, vTilde, cTilde, i, j, q1, q2, q3)
+function F = riemannX(i, j, q1, q2, q3)
   g = 9.81;
+  hL = q1(i,j);
+  uL = q2(i,j)/q1(i,j);
+  vL = q3(i,j)/q1(i,j);
+  hR = q1(i+1,j);
+  uR = q2(i+1,j)/q1(i+1,j);
+  vR = q3(i+1,j)/q1(i+1,j);
+  hBar = 0.5*(hL+hR);
+  uTilde = (sqrt(hL)*uL+sqrt(hR)*uR)/(sqrt(hL)+sqrt(hR));
+  %if (abs(uR-uL) < 1e-9)
+  vTilde = (sqrt(hL)*vL+sqrt(hR)*vR)/(sqrt(hL)+sqrt(hR));
+  %else
+  %  aL = hL*(uTilde-uL);
+  %  aR = hR*(uR-uTilde);
+  %  vTilde = (aL*vL+aR*vR)/(aL+aR);
+  %end
+  cTilde = sqrt(g*hBar);
+
   r1(1) = 1;
   r1(2) = uTilde-cTilde;
   r1(3) = vTilde;
@@ -152,8 +186,27 @@ function F = riemannX(uTilde, vTilde, cTilde, i, j, q1, q2, q3)
 end
 
 % Solves the Riemann problem on y
-function G = riemannY(uTilde, vTilde, cTilde, i, j, q1, q2, q3)
+function G = riemannY(i, j, q1, q2, q3)
   g = 9.81;
+  hL = q1(i,j);
+  uL = q2(i,j)/q1(i,j);
+  vL = q3(i,j)/q1(i,j);
+  hR = q1(i,j+1);
+  uR = q2(i,j+1)/q1(i,j+1);
+  vR = q3(i,j+1)/q1(i,j+1);
+  hBar = 0.5*(hL+hR);
+  uTilde = (sqrt(hL)*uL+sqrt(hR)*uR)/(sqrt(hL)+sqrt(hR));
+  if (abs(uR-uL) < 1e-9)
+    vTilde = (sqrt(hL)*vL+sqrt(hR)*vR)/(sqrt(hL)+sqrt(hR));
+  else
+    aL = hL*(uTilde-uL);
+    aR = hR*(uR-uTilde);
+    vTilde = (aL*vL+aR*vR)/(aL+aR);
+  end
+ 
+  cTilde = sqrt(g*hBar);
+
+
   r1(1) = 1;
   r1(2) = uTilde;
   r1(3) = vTilde-cTilde;
@@ -189,10 +242,10 @@ end
 function z = phi(lambda)
   % empirical value
   epsilon = 2;
-  %if (abs(lambda) >= epsilon)
+  if (abs(lambda) >= epsilon)
     z = abs(lambda);
-  %else
-  %  z = (lambda^2 + epsilon^2)/(2*epsilon);
-  %end
+  else
+    z = (lambda^2 + epsilon^2)/(2*epsilon);
+ end
 end
 
