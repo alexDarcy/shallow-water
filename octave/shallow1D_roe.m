@@ -14,7 +14,7 @@ function shallow1D_roe
   end
 
   for i=1:n
-    if (x(i) <= Lx/2)
+    if (abs(x(i)-5) < 3)
       h(i) = 1;
     else
       h(i) = 0.5;

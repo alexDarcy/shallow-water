@@ -1,14 +1,14 @@
 % Solves the Riemann problem on each axis 
 
-function F  = riemann(isX,qL,qR)
+function [F,l] = riemann(isX,qL,qR)
   if (isX == 1)
-    F  = riemannX(qL,qR);
+    [F,l] = riemannX(qL,qR);
   else
-    F  = riemannY(qL,qR);
+    [F,l] = riemannY(qL,qR);
   end
 end
     
-function F  = riemannX(qL,qR)
+function [F, lambdaMax]  = riemannX(qL,qR)
   g = 9.81;
   hL = qL(1);
   uL = qL(2)/qL(1);
@@ -39,9 +39,7 @@ function F  = riemannX(qL,qR)
   r3(2) = uTilde+cTilde;
   r3(3) = vTilde;
 
-  delta(1) = qR(1)-qL(1);
-  delta(2) = qR(2)-qL(2);
-  delta(3) = qR(3)-qL(3);
+  delta = qR-qL;
   alpha(1) = ((uTilde+cTilde)*delta(1)-delta(2))/(2*cTilde);
   alpha(2) = -vTilde*delta(1)+delta(3);
   alpha(3) = (-(uTilde-cTilde)*delta(1)+delta(2))/(2*cTilde);
@@ -54,10 +52,11 @@ function F  = riemannX(qL,qR)
   F(2) = 0.5*(qL(2)^2/qL(1)+0.5*g*qL(1)^2 + qR(2)^2/qR(1)+0.5*g*qR(1)^2);
   F(3) = 0.5*(qL(2)*qL(3)/qL(1)+qR(2)*qR(3)/qR(1)) ;
   F = F - w;
+  lambdaMax = max(lambda);
 
 end
 
-function G = riemannY(qL,qR)
+function [G, lambdaMax] = riemannY(qL,qR)
   g = 9.81;
   hL = qL(1);
   uL = qL(2)/qL(1);
@@ -88,9 +87,7 @@ function G = riemannY(qL,qR)
   r3(2) = uTilde;
   r3(3) = vTilde+cTilde;
 
-  delta(1) = qR(1)-qL(1);
-  delta(2) = qR(2)-qL(2);
-  delta(3) = qR(3)-qL(3);
+  delta = qR-qL;
   alpha(1) = ((vTilde+cTilde)*delta(1)-delta(3))/(2*cTilde);
   alpha(2) = uTilde*delta(1)-delta(2);
   alpha(3) = (-(vTilde-cTilde)*delta(1)+delta(3))/(2*cTilde);
@@ -101,23 +98,22 @@ function G = riemannY(qL,qR)
 
 
   G(1) = 0.5*(qL(3)+qR(3));
-  
   G(2) = 0.5*(qL(2)*qL(3)/qL(1)+qR(2)*qR(3)/qR(1)) ;
-
   G(3) = 0.5*(qL(3)^2/qL(1)+0.5*g*qL(1)^2 + qR(3)^2/qR(1)+0.5*g*qR(1)^2);
 
   G = G - w;
 
+  lambdaMax = max(lambda);
 end
 
 % Harten entropy fix
 function z = phi(lambda)
   % empirical value
-  epsilon = 2;
-  if (abs(lambda) >= epsilon)
+  %epsilon = 2;
+  %if (abs(lambda) >= epsilon)
     z = abs(lambda);
-  else
-    z = (lambda^2 + epsilon^2)/(2*epsilon);
- end
+  %else
+ %   z = (lambda^2 + epsilon^2)/(2*epsilon);
+ %end
 end
 
