@@ -1,24 +1,23 @@
 % Finite volume solver for 2D shallow water equations
 function shallow2D(toPrint=0)
-  Lx = 10;
-  Ly = 10;
-  n1 = 25;
-  n2 = 25;
+  Lx = 9;
+  Ly = 9;
+  n1 = 20;
+  n2 = 20;
   dt = 0.01;
   g = 9.81;
   % Initial disk
-  xC = Lx/2;
+  xC = 2*Lx/3;
   yC = Ly/2;
   radius = 3;
-  stepX = Lx/n1;
-  stepY = Ly/n2;
+  dx = Lx/n1;
+  dy = Ly/n2;
   h1 = 1;
   h0 = 0.5;
 
   % Create mesh with ghost cells
-  x = -stepX:stepX:Lx+stepX;
-  y = -stepY:stepY:Ly+stepY;
-  %z = zeros(nX+1,nY+1)
+  x = -dy:dx:Lx+dx;
+  y = -dy:dy:Ly+dy;
   nX = length(x);
   nY = length(y);
   % For visu
@@ -29,9 +28,9 @@ function shallow2D(toPrint=0)
       %dist = (x(i)-xC)^2 + (y(j)-yC)^2;
       %dist = sqrt(dist);
       %if (dist <= radius )
-      %if (abs(x(i)-xC) <= 3 && abs(y(j)-yC) <= 3)
-      if (x(i) < Lx/2 )
-      %if (x(i) < Lx/2 || y(j) < Ly/2)
+      if (abs(x(i)-xC) <= 3 && abs(y(j)-yC) <= 3)
+      %if (x(i) < Lx/2 || y(j) < Ly/
+      %if (x(i) > Lx/2 )
         h(i,j) = h1;
       else
         h(i,j) = h0;
@@ -52,6 +51,9 @@ function shallow2D(toPrint=0)
   xCut = x(2:nX-1);
   yCut = y(2:nY-1);
   hCut = q1(2:nX-1,2:nY-1);
+  if (toPrint > 0)
+    f = figure('Visible','off');
+  end
   surf(xCut,yCut,hCut);
   %surf(x,y,h);
   view(110,10);
@@ -62,39 +64,90 @@ function shallow2D(toPrint=0)
     drawnow;
   end
 
+  qL = zeros(3,1);
+  for k=1:10
+    G1tilde = zeros(nX,nY);
+    G2tilde = zeros(nX,nY);
+    G3tilde = zeros(nX,nY);
+    F1tilde = zeros(nX,nY);
+    F2tilde = zeros(nX,nY);
+    F3tilde = zeros(nX,nY);
 
-
-  for k=1:100
     for i=1:nX-1
       for j=1:nY-1
         % riemann x
-        FTmp = riemann(1,i, j, q1, q2, q3);
+        qL(1) = q1(i,j);
+        qL(2) = q2(i,j);
+        qL(3) = q3(i,j);
+        qRX(1) = q1(i+1,j);
+        qRX(2) = q2(i+1,j);
+        qRX(3) = q3(i+1,j);
+        qRY(1) = q1(i,j+1);
+        qRY(2) = q2(i,j+1);
+        qRY(3) = q3(i,j+1);
+
+        FTmp = riemann(1,qL,qRX);
+        GTmp = riemann(0,qL,qRY);
+
+        %[BrAr, BlAr] = transverse(1,1,qL,qRX);
+        %[BrAl, BlAl] = transverse(1,0,qL,qRX);
+        %G1tilde(i+1,j+1) = G1tilde(i+1,j+1) - dt/(2*dx)*BrAr(1);
+        %G2tilde(i+1,j+1) = G2tilde(i+1,j+1) - dt/(2*dx)*BrAr(2);
+        %G3tilde(i+1,j+1) = G3tilde(i+1,j+1) - dt/(2*dx)*BrAr(3);
+
+        %G1tilde(i,j+1) = G1tilde(i,j+1) - dt/(2*dx)*BrAl(1);
+        %G2tilde(i,j+1) = G2tilde(i,j+1) - dt/(2*dx)*BrAl(2);
+        %G3tilde(i,j+1) = G3tilde(i,j+1) - dt/(2*dx)*BrAl(3);
+
+        %G1tilde(i+1,j) = G1tilde(i+1,j) - dt/(2*dx)*BlAr(1);
+        %G2tilde(i+1,j) = G2tilde(i+1,j) - dt/(2*dx)*BlAr(2);
+        %G3tilde(i+1,j) = G3tilde(i+1,j) - dt/(2*dx)*BlAr(3);
+
+        %G1tilde(i,j) = G1tilde(i,j) - dt/(2*dx)*BlAl(1);
+        %G2tilde(i,j) = G2tilde(i,j) - dt/(2*dx)*BlAl(2);
+        %G3tilde(i,j) = G3tilde(i,j) - dt/(2*dx)*BlAl(3);
+
+        %[BrAr, BlAr] = transverse(0,1,qL,qRY);
+        %[BrAl, BlAl] = transverse(0,0,qL,qRY);
+        %F1tilde(i+1,j+1) = F1tilde(i+1,j+1) - dt/(2*dy)*BrAr(1);
+        %F2tilde(i+1,j+1) = F2tilde(i+1,j+1) - dt/(2*dy)*BrAr(2);
+        %F3tilde(i+1,j+1) = F3tilde(i+1,j+1) - dt/(2*dy)*BrAr(3);
+
+        %F1tilde(i+1,j) = F1tilde(i+1,j) - dt/(2*dy)*BrAl(1);
+        %F2tilde(i+1,j) = F2tilde(i+1,j) - dt/(2*dy)*BrAl(2);
+        %F3tilde(i+1,j) = F3tilde(i+1,j) - dt/(2*dy)*BrAl(3);
+
+        %F1tilde(i+1,j) = F1tilde(i+1,j) - dt/(2*dy)*BlAr(1);
+        %F2tilde(i+1,j) = F2tilde(i+1,j) - dt/(2*dy)*BlAr(2);
+        %F3tilde(i+1,j) = F3tilde(i+1,j) - dt/(2*dy)*BlAr(3);
+
+        %G1tilde1(i+1,j) = G1tilde(i+1,j) - dt/(2*dy)*BlAl(1);
+        %G2tilde2(i+1,j) = G2tilde(i+1,j) - dt/(2*dy)*BlAl(2);
+        %G3tilde3(i+1,j) = G3tilde(i+1,j) - dt/(2*dy)*BlAl(3);
+
         F1(i) = FTmp(1);
         F2(i) = FTmp(2);
         F3(i) = FTmp(3);
 
-        GTmp = riemann(0,i, j, q1, q2, q3);
         G1(j) = GTmp(1);
         G2(j) = GTmp(2);
         G3(j) = GTmp(3);
-
       end
     end
-
 
     for i=1:nX-1
       for j=1:nY-1
         if (i > 1)
-          q1(i,j) = q1(i,j) - dt/stepX*(F1(i)-F1(i-1));
-          q2(i,j) = q2(i,j) - dt/stepX*(F2(i)-F2(i-1));
-          q3(i,j) = q3(i,j) - dt/stepX*(F3(i)-F3(i-1));
+          q1(i,j) = q1(i,j) - dt/dx*(F1(i)-F1(i-1));%+F1tilde(i,j)-F1tilde(i-1,j));
+          q2(i,j) = q2(i,j) - dt/dx*(F2(i)-F2(i-1));%+F2tilde(i,j)-F2tilde(i-1,j));
+          h3(i,j) = q3(i,j) - dt/dx*(F3(i)-F3(i-1));%+F3tilde(i,j)-F3tilde(i-1,j));
         end
 
-        if (j > 1)
-          q1(i,j) = q1(i,j) - dt/stepY*(G1(j)-G1(j-1));
-          q2(i,j) = q2(i,j) - dt/stepY*(G2(j)-G2(j-1));
-          q3(i,j) = q3(i,j) - dt/stepY*(G3(j)-G3(j-1));
-        end
+        %if (j > 1)
+        %  q1(i,j) = q1(i,j) - dt/dy*(G1(j)-G1(j-1));%+G1tilde(i,j)-G1tilde(i,j-1));
+        %  q2(i,j) = q2(i,j) - dt/dy*(G2(j)-G2(j-1));%+G2tilde(i,j)-G2tilde(i,j-1));
+        %  q3(i,j) = q3(i,j) - dt/dy*(G3(j)-G3(j-1));%+G3tilde(i,j)-G3tilde(i,j-1));
+        %end
       end
     end
 
@@ -135,8 +188,4 @@ function boundary(q1,q2,q3,nX,nY)
   end
 end
 
-
-
-% Solves the Riemann problem on x
-% and add transverse flux
 
