@@ -1,2 +1,2 @@
 #!/bin/bash
-ffmpeg -f image2 -i f%d.jpg -b 1800 solution.avi
+ffmpeg -qscale 1 -b 9600 -f image2 -i f%d.png -b 1800 solution.mp4

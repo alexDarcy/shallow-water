@@ -1,15 +1,16 @@
 % Finite volume solver for 2D shallow water equations
+% Partial dam break
 function shallow2D(toPrint=0)
-  Lx = 9;
-  Ly = 9;
-  n1 = 20;
-  n2 = 20;
+  Lx = 10;
+  Ly = 10;
+  n1 = 50;
+  n2 = 50;
   dt = 0.01;
   g = 9.81;
   % Initial disk
   xC = Lx/2; 
   yC = Ly/2;
-  radius = 1;
+  radius = 0.4;
   dx = Lx/n1;
   dy = Ly/n2;
   h1 = 1;
@@ -27,8 +28,8 @@ function shallow2D(toPrint=0)
     for j=1:nY
       dist = (x(i)-xC)^2 + (y(j)-yC)^2;
       dist = sqrt(dist);
-      if (dist <= radius )
-        %if (x(i) > Lx/2 )
+      if (dist <= radius ) % water drop
+      %if (x(i) < Lx/2 )
         h(i,j) = h1;
       else
         h(i,j) = h0;
@@ -37,6 +38,9 @@ function shallow2D(toPrint=0)
     u(i,j) = 0;
     v(i,j) = 0;
   end
+
+
+  limit = Lx/(2*dx)+1;
 
   q1 = h;
   for i=1:nX
@@ -57,7 +61,7 @@ function shallow2D(toPrint=0)
   view(110,10);
   axis(limits);
   if (toPrint > 0)
-    print(strcat('movie/f',num2str(0),'.jpg'),'-djpg','-r200');
+    print(strcat('movie/f',num2str(0),'.png'),'-dpng');
   else
     drawnow;
   end
@@ -66,7 +70,7 @@ function shallow2D(toPrint=0)
   qRX = zeros(3,1);
   qRY = zeros(3,1);
   lMax = 0;
-  for k=1:100
+  for k=1:200
     for i=1:nX-1
       for j=1:nY-1
         % riemann x
@@ -94,21 +98,25 @@ function shallow2D(toPrint=0)
       end
     end
 
-    froude = max(l1,l2)*dt/dx;
-    printf('froude %f \n',froude);
+    %froude = max(l1,l2)*dt/dx;
+    %printf('froude %f \n',froude);
 
     for i=1:nX-1
       for j=1:nY-1
         if (i > 1)
-          q1(i,j) = q1(i,j) - dt/dx*(F1(i,j)-F1(i-1,j));%+F1tilde(i,j)-F1tilde(i-1,j));
-          q2(i,j) = q2(i,j) - dt/dx*(F2(i,j)-F2(i-1,j));%+F2tilde(i,j)-F2tilde(i-1,j));
-          h3(i,j) = q3(i,j) - dt/dx*(F3(i,j)-F3(i-1,j));%+F3tilde(i,j)-F3tilde(i-1,j));
+         % if ((abs(y(j)-5) < 1) || i < limit || i > limit+1) % dam break
+            q1(i,j) = q1(i,j) - dt/dx*(F1(i,j)-F1(i-1,j));%+F1tilde(i,j)-F1tilde(i-1,j));
+            q2(i,j) = q2(i,j) - dt/dx*(F2(i,j)-F2(i-1,j));%+F2tilde(i,j)-F2tilde(i-1,j));
+            q3(i,j) = q3(i,j) - dt/dx*(F3(i,j)-F3(i-1,j));%+F3tilde(i,j)-F3tilde(i-1,j));
+         % end
         end
 
         if (j > 1)
-          q1(i,j) = q1(i,j) - dt/dy*(G1(i,j)-G1(i,j-1));%+G1tilde(i,j)-G1tilde(i,j-1));
-          q2(i,j) = q2(i,j) - dt/dy*(G2(i,j)-G2(i,j-1));%+G2tilde(i,j)-G2tilde(i,j-1));
-          q3(i,j) = q3(i,j) - dt/dy*(G3(i,j)-G3(i,j-1));%+G3tilde(i,j)-G3tilde(i,j-1));
+          % if ((abs(y(j)-5) < 1) || i < limit || i > limit+1) % dam break
+            q1(i,j) = q1(i,j) - dt/dy*(G1(i,j)-G1(i,j-1));%+G1tilde(i,j)-G1tilde(i,j-1));
+            q2(i,j) = q2(i,j) - dt/dy*(G2(i,j)-G2(i,j-1));%+G2tilde(i,j)-G2tilde(i,j-1));
+            q3(i,j) = q3(i,j) - dt/dy*(G3(i,j)-G3(i,j-1));%+G3tilde(i,j)-G3tilde(i,j-1));
+          % end
         end
       end
     end
@@ -121,7 +129,7 @@ function shallow2D(toPrint=0)
     axis(limits);
     view(110,10);
     if (toPrint > 0)
-      print(strcat('movie/f',num2str(k),'.jpg'),'-djpg','-r200');
+      print(strcat('movie/f',num2str(k),'.png'),'-dpng');
     else
       drawnow;
     end
