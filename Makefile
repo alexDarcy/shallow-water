@@ -1,6 +1,6 @@
 NAME		= shallow_water
 CC		= g++
-SRC		= main.cpp Vector3.cpp
+SRC		= main.cpp Vector3.cpp Solver.cpp
 CFLAGS		= -Wall	-W -Werror
 
 IFLAGS=	-I/usr/include -I/usr/include/GL -I/usr/X11R6/include -I/usr/X11R6/include/GL
@@ -14,7 +14,7 @@ all :		$(NAME)
 $(NAME) :	$(OBJ)
 		$(CC) $(OBJ) $(LFLAGS) -o $(NAME)
 
-.cpp.o :
+.cpp.o : 
 		$(CC) $(CFLAGS) $(IFLAGS) $< -c -o $@
 
 clean :
