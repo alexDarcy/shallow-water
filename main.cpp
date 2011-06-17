@@ -5,7 +5,7 @@
 #include <sys/resource.h>
 #include <stdio.h>
 #include "Vector3.h"
-//#include "Solver.h"
+#include "Solver.h"
 
 #define max(a,b) (a>=b?a:b)
 #define min(a,b) (a<=b?a:b)
@@ -30,7 +30,6 @@ GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat positionLight[] = { -1.5f, 1.0f, -4.0f, 1.0f };
 
 double r = 10.0f; /* radius for the camera */
-double y_0 = 0.0f;
 double theta = 0; /* angle to 0y */
 double phi = 0; /* angle to 0z */
 
@@ -73,6 +72,22 @@ void computePoints()
     }
   }
 }
+
+void updateHeight()
+{
+  int i = 0;
+  for (float z = 0; z <= LZ ; z += dz)
+  {
+    for (float x = 0; x <= LX ; x += dx)
+    {
+      vertices[i+1] = height(x, z, t);
+      i+= 3;
+    }
+  }
+  //Solver s;
+  //s.Run(vertices, LX, dz, LZ, dZ);
+}
+
 
 void computeNormals()
 {
@@ -148,7 +163,7 @@ void display(void)
   glVertex3f( 5.0f, -1.0f, -5.0f);
   glEnd();
 
-  computePoints();
+  updateHeight();
   computeNormals();
   
   if (showPoints)
@@ -295,6 +310,7 @@ int main(int argc, char* argv[])
   }
 
   computeIndices();
+  computePoints();
 
 
   /* Creation of the window */
