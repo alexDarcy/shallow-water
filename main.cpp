@@ -9,20 +9,18 @@
 
 #define max(a,b) (a>=b?a:b)
 #define min(a,b) (a<=b?a:b)
-#define Pi 3.141592654f
 
 
 using namespace std;
 
 /* Mesh data */
-int nbX = 50;
-int nbZ = 50;
+int nbX = 20;
+int nbZ = 20;
 int nbPoints = nbX*nbZ;
 double LX = 5; /* start from 0 */
 double LZ = 5;
-double dx = LX / (nbX-1);
-double dz = LZ / (nbZ-1);
 int nbQuads = (nbX-1)*(nbZ-1);
+Solver* s;
 
 GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
@@ -43,116 +41,11 @@ Vector3 cameraDir(LX/2,0,LZ/2);
 double speed = 0.0001;
 
 /* Data display */
-GLfloat* vertices;
-GLfloat* normals;
 GLfloat* colors;
 GLuint* indices;
 bool showPoints = false;
 double t;
 double tmp;
-
-/* Height of the waves */
-double height(double x, double z, double t)
-{
-  return 0.07*(cos(x*10*Pi/LX - t)+cos(z*10*Pi/LZ - t));
-}
-
-void computePoints()
-{
-  int i = 0;
-  for (float z = 0; z <= LZ ; z += dz)
-  {
-    for (float x = 0; x <= LX ; x += dx)
-    {
-      vertices[i] = x;
-      vertices[i+1] = height(x, z, t);
-      vertices[i+2] = z;
-
-      i+= 3;
-    }
-  }
-}
-
-void updateHeight()
-{
-  int i = 0;
-  for (float z = 0; z <= LZ ; z += dz)
-  {
-    for (float x = 0; x <= LX ; x += dx)
-    {
-      vertices[i+1] = height(x, z, t);
-      i+= 3;
-    }
-  }
-  //Solver s;
-  //s.Run(vertices, LX, dz, LZ, dZ);
-}
-
-
-void computeNormals()
-{
-  Vector3 v1;
-  Vector3 v2;
-  Vector3 v3;
-  for (int i = 0; i < nbQuads ; i++)
-  {
-    /* copy the right side of the quad on the boundary */
-    //if (i > 0 && i % (nbX-1) == 0)
-    //{
-    //  //normals[3*i] = normals[3*i-3];
-    //  //normals[3*i+1] = normals[3*i-1];
-    //  //normals[3*i+2] = normals[3*i-1];
-
-    //  //normals[3*i+nbX*3] = normals[3*i+nbX*3-3];
-    //  //normals[3*i+nbX*3+1] = normals[3*i+nbX*3-2];
-    //  //normals[3*i+nbX*3+2] = normals[3*i+nbX*3-1];
-    //  continue;
-    //}
-    v1.x = vertices[3*i+3] - vertices[3*i];
-    v1.y = vertices[3*i+4] - vertices[3*i+1];
-    v1.z = vertices[3*i+5] - vertices[3*i+2];
-
-    v2.x = vertices[3*i+nbX*3] - vertices[3*i];
-    v2.y = vertices[3*i+nbX*3+1] - vertices[3*i+1];
-    v2.z = vertices[3*i+nbX*3+2] - vertices[3*i+2];
-    v3 = v2.crossProduct(v1);
-    v3.normalize();
-
-    /* compute only the left of the quad */
-    normals[3*i] = v3.x;
-    normals[3*i+1] = v3.y;
-    normals[3*i+2] = v3.z;
-    normals[3*i+nbX*3] = v3.x;
-    normals[3*i+nbX*3+1] = v3.y;
-    normals[3*i+nbX*3+2] = v3.z;
-  }
-
-  int i = nbQuads;
-  normals[3*i+3] = normals[3*i];
-  normals[3*i+4] = normals[3*i+1];
-  normals[3*i+5] = normals[3*i+2];
-
-  normals[3*i+nbX*3+3] = normals[3*i+nbX*3];
-  normals[3*i+nbX*3+4] = normals[3*i+nbX*3+1];
-  normals[3*i+nbX*3+5] = normals[3*i+nbX*3+2];
-
-}
-
-void computeIndices()
-{
-  int k = 0;
-  for (int i = 0; i < nbQuads; i++)
-  {
-    if (i > 0 && i % (nbX-1) == 0)
-      k++;
-    indices[4*i] = k;
-    indices[4*i+1] = k+1;
-    indices[4*i+2] = nbX+1+k;
-    indices[4*i+3] = nbX+k;
-
-    k++;
-  }
-}
 
 /* Display the scene */
 void display(void)
@@ -165,6 +58,7 @@ void display(void)
       cameraDir.x, cameraDir.y, cameraDir.z,
       verticale.x,verticale.y,verticale.z);
 
+
   // Draw ground
   glColor3f (1, 0.9, 0.7);
   glBegin(GL_QUADS);
@@ -174,8 +68,7 @@ void display(void)
   glVertex3f( 5.0f, -1.0f, -5.0f);
   glEnd();
 
-  updateHeight();
-  computeNormals();
+  s->run(t);
 
   if (showPoints)
     glPolygonMode (GL_FRONT_AND_BACK, GL_POINT);
@@ -186,10 +79,10 @@ void display(void)
   glEnableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 
-  glVertexPointer(3, GL_FLOAT, 0, vertices);
-  glNormalPointer(GL_FLOAT, 0, normals);
-  glColorPointer(3, GL_FLOAT, 0, colors);
-  glDrawElements(GL_QUADS, nbQuads*4, GL_UNSIGNED_INT, indices);
+  glVertexPointer(3, GL_FLOAT, 0, s->V);
+  glNormalPointer(GL_FLOAT, 0, s->N);
+  glColorPointer(3, GL_FLOAT, 0, s->colors);
+  glDrawElements(GL_QUADS, nbQuads*4, GL_UNSIGNED_INT, s->indices);
 
 
   glDisableClientState(GL_COLOR_ARRAY);
@@ -308,23 +201,7 @@ void changeStackSize()
 
 int main(int argc, char* argv[])
 {
-  //changeStackSize();
-  vertices = new GLfloat[nbPoints*3];
-  normals = new GLfloat[nbPoints*3];
-  colors = new GLfloat[nbPoints*3];
-  indices = new GLuint[nbQuads*4];
-  for (int i = 0; i < nbPoints*3 ; i+= 3)
-  {
-    colors[i] = 0;
-    colors[i+1] = 0;
-    colors[i+2] = 1.0f;
-  }
-
-  computeIndices();
-  computePoints();
-
-  //Solver s(LX,dx,LZ,dz);
-
+  s = new Solver(LX,nbX,LZ,nbZ);
 
   /* Creation of the window */
   glutInit(&argc, argv);
