@@ -19,19 +19,33 @@ class Solver
     int nbQuads;
     float Lx;
     float Lz;
+    float dx;
+    float dz;
+    float dt;
+    float* F1;
+    float* F2;
+    float* F3;
+    float* G1;
+    float* G2;
+    float* G3;
+
 
   public:
     Solver();
     Solver(float Lx,float dx, float Lz,float dz);
     void run(float t);
-    Vector3 riemannX(float* qL,float* qR);
-    Vector3 riemannY(float* qL,float* qR);
+    Vector3 riemannX(Vector3& qL,Vector3& qR);
+    Vector3 riemannY(Vector3& qL,Vector3& qR);
     float phi(float lambda);
     ~Solver();
 
     float* h;
     float* u;
     float* v;
+    float* q1;
+    float* q2;
+    float* q3;
+    
 
 };
 

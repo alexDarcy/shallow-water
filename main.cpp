@@ -15,8 +15,8 @@
 using namespace std;
 
 /* Mesh data */
-int nbX = 20;
-int nbZ = 20;
+int nbX = 50;
+int nbZ = 50;
 int nbPoints = nbX*nbZ;
 double LX = 5; /* start from 0 */
 double LZ = 5;
@@ -30,8 +30,8 @@ GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat positionLight[] = { -1.5f, 1.0f, -4.0f, 1.0f };
 
 double r = 10.0f; /* radius for the camera */
-double theta = 0; /* angle to 0y */
-double phi = 0; /* angle to 0z */
+double theta = 0; /* angle around 0y */
+double phi = Pi/8; /* angle around 0z */
 
 /* camera position */
 Vector3 cameraPos(LX/2 + r*cos(phi)*sin(theta),r*sin(phi),
@@ -70,8 +70,11 @@ void display(void)
   glVertex3f( 5.0f, -1.0f, -5.0f);
   glEnd();
 
-  s->run(t);
-  v->updateHeight(s->h);
+  if (t > 2.0f) // not too fast
+  {
+    s->run(t);
+    v->updateHeight(s->q1);
+  }
 
   if (showPoints)
     glPolygonMode (GL_FRONT_AND_BACK, GL_POINT);

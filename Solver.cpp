@@ -6,8 +6,8 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
   nbX(nX),nbZ(nZ),
   Lx(LX),Lz(LZ)
 {
-  float dx = Lx / (nbX-1);
-  float dz = Lz / (nbZ-1);
+  dx = Lx / (nbX-1);
+  dz = Lz / (nbZ-1);
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
@@ -18,9 +18,18 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
   float radius = Lx/4;
   float dist;
   int i = 0;
+  dt = 0.02;
   h = new float[nbPoints];
   u = new float[nbPoints];
   v = new float[nbPoints];
+  F1 = new float[nbPoints];
+  F2 = new float[nbPoints];
+  F3 = new float[nbPoints];
+  G1 = new float[nbPoints];
+  G2 = new float[nbPoints];
+  G3 = new float[nbPoints];
+
+
   for (float z = 0; z <= Lz ; z += dz)
   {
     for (float x = 0; x <= Lx ; x += dx)
@@ -39,6 +48,17 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
       i++;
     }
   }
+  q1 = new float[nbPoints];
+  q2 = new float[nbPoints];
+  q3 = new float[nbPoints];
+  for (int i =0; i < nbPoints; i++)
+  {
+    q1[i] = h[i];
+    q2[i] = u[i]*h[i];
+    q3[i] = v[i]*h[i];
+  }
+
+
 }
 
 Solver::~Solver(){
@@ -47,25 +67,67 @@ Solver::~Solver(){
 void Solver::run(float t)
 {
   t++;
-  //for (int i = 0; i < nbPoints ; i++)
-  //{
-  //  float x = vertices[3*i];
-  //  float z = vertices[3*i+2];
-  //  float result = 0.07*(cos(x*10*Pi/Lx - t)+cos(z*10*Pi/Lz - t));
-  //  vertices[3*i+1] = result;
-  //}
-  //updateNormals();
+  Vector3 qL, qRX, qRY;
+  for (int j =0; j < nbZ-1; j++)
+  {
+    for (int i =0; i < nbX-1; i++)
+    {
+      qL(1) = q1[i+j*nbX];
+      qL(2) = q2[i+j*nbX];
+      qL(3) = q3[i+j*nbX];
+      qRX(1) = q1[i+1+j*nbX];
+      qRX(2) = q2[i+1+j*nbX];
+      qRX(3) = q3[i+1+j*nbX];
+      qRY(1) = q1[i+j*nbX+nbX];
+      qRY(2) = q2[i+j*nbX+nbX];
+      qRY(3) = q3[i+j*nbX+nbX];
+
+      Vector3 FTmp = riemannX(qL,qRX);
+      Vector3 GTmp = riemannY(qL,qRY);
+
+      F1[i+j*nbX] = FTmp(1);
+      F2[i+j*nbX] = FTmp(2);
+      F3[i+j*nbX] = FTmp(3);
+
+      G1[i+j*nbX] = GTmp(1);
+      G2[i+j*nbX] = GTmp(2);
+      G3[i+j*nbX] = GTmp(3);
+    }
+  }
+
+  for (int j =0; j < nbZ-1; j++)
+  {
+    for (int i =0; i < nbX-1; i++)
+    {
+
+      if (i > 0)
+      {
+        // if ((abs(y(j)-5) < 1) || i < limit || i > limit+1) % dam break
+        q1[i+j*nbX] = q1[i+j*nbX] - dt/dx*(F1[i+j*nbX]-F1[i-1+j*nbX]);//%+F1tilde(i,j)-F1tilde(i-1,j));
+        q2[i+j*nbX] = q2[i+j*nbX] - dt/dx*(F2[i+j*nbX]-F2[i-1+j*nbX]);//%+F2tilde(i,j)-F2tilde(i-1,j));
+        q3[i+j*nbX] = q3[i+j*nbX] - dt/dx*(F3[i+j*nbX]-F3[i-1+j*nbX]);//%+F3tilde(i,j)-F3tilde(i-1,j));
+      }
+
+      if (j > 0)
+      {
+        //% if ((abs(y(j)-5) < 1) || i < limit || i > limit+1) % dam break
+        q1[i+j*nbX] = q1[i+j*nbX] - dt/dz*(G1[i+j*nbX]-G1[i+j*nbX-nbX]);//%+G1tilde(i,j)-G1tilde(i,j-1));
+        q2[i+j*nbX] = q2[i+j*nbX] - dt/dz*(G2[i+j*nbX]-G2[i+j*nbX-nbX]);//%+G2tilde(i,j)-G2tilde(i,j-1));
+        q3[i+j*nbX] = q3[i+j*nbX] - dt/dz*(G3[i+j*nbX]-G3[i+j*nbX-nbX]);//%+G3tilde(i,j)-G3tilde(i,j-1));
+      }
+    }
+  }
 }
 
 
-Vector3 Solver::riemannX(float* qL,float* qR)
+Vector3 Solver::riemannX(Vector3& qL,Vector3& qR)
 {
-  float hL = qL[1];
-  float uL = qL[2]/qL[1];
-  float vL = qL[3]/qL[1];
-  float hR = qR[1];
-  float uR = qR[2]/qR[1];
-  float vR = qR[3]/qR[1];
+  float hL = qL(1);
+  float uL = qL(2)/qL(1);
+  float vL = qL(3)/qL(1);
+  float hR = qR(1);
+  float uR = qR(2)/qR(1);
+  float vR = qR(3)/qR(1);
 
   float hBar = 0.5*(hL+hR);
   float uTilde = (sqrt(hL)*uL+sqrt(hR)*uR)/(sqrt(hL)+sqrt(hR));
@@ -77,9 +139,8 @@ Vector3 Solver::riemannX(float* qL,float* qR)
   Vector3 r3 (1, uTilde+cTilde, vTilde);
 
   Vector3 alpha, lambda;
-  Vector3 delta(qR[0],qR[1],qR[2]);
-  for (int i = 0; i < 3; i++)
-    delta(i) -= qL[i];
+  Vector3 delta = qR;
+  delta -= qL;
   Vector3 w;
   alpha(1) = ((uTilde+cTilde)*delta(1)-delta(2))/(2*cTilde);
   alpha(2) = -vTilde*delta(1)+delta(3);
@@ -93,22 +154,22 @@ Vector3 Solver::riemannX(float* qL,float* qR)
   w *= 0.5;
 
   Vector3 F;
-  F(1) = 0.5*(qL[2]+qR[2]);
-  F(2) = 0.5*(qL[2]*qL[2]/qL[1]+0.5*g*qL[1]*qL[1] + qR[2]*qR[2]/qR[1]+0.5*g*qR[1]*qR[1]);
-  F(3) = 0.5*(qL[2]*qL[3]/qL[1]+qR[2]*qR[3]/qR[1]) ;
+  F(1) = 0.5*(qL(2)+qR(2));
+  F(2) = 0.5*(qL(2)*qL(2)/qL(1)+0.5*g*qL(1)*qL(1) + qR(2)*qR(2)/qR(1)+0.5*g*qR(1)*qR(1));
+  F(3) = 0.5*(qL(2)*qL(3)/qL(1)+qR(2)*qR(3)/qR(1)) ;
   F = F - w;
   //lambdaMax = max(lambda);
   return F;
 }
 
-Vector3 Solver::riemannY(float* qL,float* qR)
+Vector3 Solver::riemannY(Vector3& qL,Vector3& qR)
 {
-  float hL = qL[1];
-  float uL = qL[2]/qL[1];
-  float vL = qL[3]/qL[1];
-  float hR = qR[1];
-  float uR = qR[2]/qR[1];
-  float vR = qR[3]/qR[1];
+  float hL = qL(1);
+  float uL = qL(2)/qL(1);
+  float vL = qL(3)/qL(1);
+  float hR = qR(1);
+  float uR = qR(2)/qR(1);
+  float vR = qR(3)/qR(1);
   float hBar = 0.5*(hL+hR);
   float uTilde = (sqrt(hL)*uL+sqrt(hR)*uR)/(sqrt(hL)+sqrt(hR));
   float vTilde = (sqrt(hL)*vL+sqrt(hR)*vR)/(sqrt(hL)+sqrt(hR));
@@ -119,9 +180,8 @@ Vector3 Solver::riemannY(float* qL,float* qR)
   Vector3 r2 (0, -1, 0);
   Vector3 r3 (1, uTilde, vTilde+cTilde);
 
-  Vector3 delta(qR[0],qR[1],qR[2]);
-  for (int i = 0; i < 3; i++)
-    delta(i) -= qL[i];
+  Vector3 delta = qR;
+  delta -= qL;
 
   Vector3 alpha;
   Vector3 lambda;
@@ -140,9 +200,9 @@ Vector3 Solver::riemannY(float* qL,float* qR)
 
 
   Vector3 G;
-  G(1) = 0.5*(qL[3]+qR[3]);
-  G(2) = 0.5*(qL[2]*qL[3]/qL[1]+qR[2]*qR[3]/qR[1]) ;
-  G(3) = 0.5*(qL[3]*qL[3]/qL[1]+0.5*g*qL[1]*qL[1] + qR[3]*qR[3]/qR[1]+0.5*g*qR[1]*qR[1]);
+  G(1) = 0.5*(qL(3)+qR(3));
+  G(2) = 0.5*(qL(2)*qL(3)/qL(1)+qR(2)*qR(3)/qR(1)) ;
+  G(3) = 0.5*(qL(3)*qL(3)/qL(1)+0.5*g*qL(1)*qL(1) + qR(3)*qR(3)/qR(1)+0.5*g*qR(1)*qR(1));
 
   G = G - w;
   return G;

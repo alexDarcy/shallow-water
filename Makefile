@@ -1,7 +1,7 @@
 NAME		= shallow_water
 CC		= g++
 SRC		= main.cpp Vector3.cpp Solver.cpp Visu.cpp
-CFLAGS		= -Wall	-W -Werror
+CFLAGS		= -Wall	-W -Werror -g
 
 IFLAGS=	-I/usr/include -I/usr/include/GL -I/usr/X11R6/include -I/usr/X11R6/include/GL
 
