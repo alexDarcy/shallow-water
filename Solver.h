@@ -24,18 +24,15 @@ class Solver
     Solver();
     Solver(float Lx,float dx, float Lz,float dz);
     void run(float t);
-    void updateNormals();
-    void computeColors();
-    void computeIndices();
     Vector3 riemannX(float* qL,float* qR);
     Vector3 riemannY(float* qL,float* qR);
     float phi(float lambda);
     ~Solver();
 
-    float* V;
-    float* N;
-    int* indices;
-    float* colors;
+    float* h;
+    float* u;
+    float* v;
+
 };
 
 #endif

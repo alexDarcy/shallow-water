@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "Vector3.h"
 #include "Solver.h"
+#include "Visu.h"
 
 #define max(a,b) (a>=b?a:b)
 #define min(a,b) (a<=b?a:b)
@@ -21,6 +22,7 @@ double LX = 5; /* start from 0 */
 double LZ = 5;
 int nbQuads = (nbX-1)*(nbZ-1);
 Solver* s;
+Visu* v;
 
 GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
@@ -69,6 +71,7 @@ void display(void)
   glEnd();
 
   s->run(t);
+  v->updateHeight(s->h);
 
   if (showPoints)
     glPolygonMode (GL_FRONT_AND_BACK, GL_POINT);
@@ -79,10 +82,10 @@ void display(void)
   glEnableClientState(GL_NORMAL_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 
-  glVertexPointer(3, GL_FLOAT, 0, s->V);
-  glNormalPointer(GL_FLOAT, 0, s->N);
-  glColorPointer(3, GL_FLOAT, 0, s->colors);
-  glDrawElements(GL_QUADS, nbQuads*4, GL_UNSIGNED_INT, s->indices);
+  glVertexPointer(3, GL_FLOAT, 0, v->vertices);
+  glNormalPointer(GL_FLOAT, 0, v->normals);
+  glColorPointer(3, GL_FLOAT, 0, v->colors);
+  glDrawElements(GL_QUADS, nbQuads*4, GL_UNSIGNED_INT, v->indices);
 
 
   glDisableClientState(GL_COLOR_ARRAY);
@@ -202,6 +205,7 @@ void changeStackSize()
 int main(int argc, char* argv[])
 {
   s = new Solver(LX,nbX,LZ,nbZ);
+  v = new Visu(s->h,LX,nbX,LZ,nbZ);
 
   /* Creation of the window */
   glutInit(&argc, argv);
