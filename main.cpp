@@ -15,8 +15,8 @@
 using namespace std;
 
 /* Mesh data */
-int nbX = 20;
-int nbZ = 20;
+int nbX = 50;
+int nbZ = 50;
 int nbPoints = nbX*nbZ;
 double LX = 5; /* start from 0 */
 double LZ = 5;
@@ -94,37 +94,48 @@ void computeNormals()
   Vector3 v1;
   Vector3 v2;
   Vector3 v3;
-  for (int i = 0; i < nbPoints*3 ; i+= 3)
+  for (int i = 0; i < nbQuads ; i++)
   {
-    if (i > 0 && i % (nbX-1) == 0)
-    {
-      v3.x = normals[i-3]; 
-      v3.y = normals[i-2]; 
-      v3.z = normals[i-1]; 
-    }
-    else if (i > nbX*(nbZ-1)*4)
-    {
-      v3.x = normals[i-3*nbX]; 
-      v3.y = normals[i-3*nbX+1]; 
-      v3.z = normals[i-3*nbX+2]; 
-    }
-    else
-    {
-      v1.x = vertices[i+3] - vertices[i];
-      v1.y = vertices[i+4] - vertices[i+1];
-      v1.z = vertices[i+5] - vertices[i+2];
+    /* copy the right side of the quad on the boundary */
+    //if (i > 0 && i % (nbX-1) == 0)
+    //{
+    //  //normals[3*i] = normals[3*i-3];
+    //  //normals[3*i+1] = normals[3*i-1];
+    //  //normals[3*i+2] = normals[3*i-1];
 
-      v2.x = vertices[i+nbX*3] - vertices[i];
-      v2.y = vertices[i+nbX*3+1] - vertices[i+1];
-      v2.z = vertices[i+nbX*3+2] - vertices[i+2];
-      v3 = v2.crossProduct(v1);
-      v3.normalize();
-    }
+    //  //normals[3*i+nbX*3] = normals[3*i+nbX*3-3];
+    //  //normals[3*i+nbX*3+1] = normals[3*i+nbX*3-2];
+    //  //normals[3*i+nbX*3+2] = normals[3*i+nbX*3-1];
+    //  continue;
+    //}
+    v1.x = vertices[3*i+3] - vertices[3*i];
+    v1.y = vertices[3*i+4] - vertices[3*i+1];
+    v1.z = vertices[3*i+5] - vertices[3*i+2];
 
-    normals[i] = v3.x;
-    normals[i+1] = v3.y;
-    normals[i+2] = v3.z;
+    v2.x = vertices[3*i+nbX*3] - vertices[3*i];
+    v2.y = vertices[3*i+nbX*3+1] - vertices[3*i+1];
+    v2.z = vertices[3*i+nbX*3+2] - vertices[3*i+2];
+    v3 = v2.crossProduct(v1);
+    v3.normalize();
+
+    /* compute only the left of the quad */
+    normals[3*i] = v3.x;
+    normals[3*i+1] = v3.y;
+    normals[3*i+2] = v3.z;
+    normals[3*i+nbX*3] = v3.x;
+    normals[3*i+nbX*3+1] = v3.y;
+    normals[3*i+nbX*3+2] = v3.z;
   }
+
+  int i = nbQuads;
+  normals[3*i+3] = normals[3*i];
+  normals[3*i+4] = normals[3*i+1];
+  normals[3*i+5] = normals[3*i+2];
+
+  normals[3*i+nbX*3+3] = normals[3*i+nbX*3];
+  normals[3*i+nbX*3+4] = normals[3*i+nbX*3+1];
+  normals[3*i+nbX*3+5] = normals[3*i+nbX*3+2];
+
 }
 
 void computeIndices()
@@ -138,7 +149,7 @@ void computeIndices()
     indices[4*i+1] = k+1;
     indices[4*i+2] = nbX+1+k;
     indices[4*i+3] = nbX+k;
- 
+
     k++;
   }
 }
@@ -165,7 +176,7 @@ void display(void)
 
   updateHeight();
   computeNormals();
-  
+
   if (showPoints)
     glPolygonMode (GL_FRONT_AND_BACK, GL_POINT);
   else
@@ -287,7 +298,7 @@ void changeStackSize()
       rl.rlim_max = sizeCur;
       rl.rlim_cur = sizeMax;
       result = setrlimit(RLIMIT_STACK, &rl);
-     if (result != 0)
+      if (result != 0)
       {
         fprintf(stderr, "Failed to change stack size : result = %d\n", result);
       }
@@ -311,6 +322,8 @@ int main(int argc, char* argv[])
 
   computeIndices();
   computePoints();
+
+  //Solver s(LX,dx,LZ,dz);
 
 
   /* Creation of the window */

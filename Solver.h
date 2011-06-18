@@ -19,6 +19,8 @@ class Solver
     Vector3 riemannY(float* qL,float* qR);
     float phi(float lambda);
     ~Solver();
+
+    float* grid;
 };
 
 #endif
