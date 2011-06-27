@@ -3,8 +3,8 @@
 function shallow2D(toPrint=0)
   Lx = 10;
   Ly = 10;
-  n1 = 50;
-  n2 = 50;
+  n1 = 20;
+  n2 = 20;
   dt = 0.01;
   g = 9.81;
   % Initial disk
@@ -28,8 +28,8 @@ function shallow2D(toPrint=0)
     for j=1:nY
       dist = (x(i)-xC)^2 + (y(j)-yC)^2;
       dist = sqrt(dist);
-      if (dist <= radius ) % water drop
-      %if (x(i) < Lx/2 )
+      %if (dist <= radius ) % water drop
+      if (x(i) < Lx/2 )
         h(i,j) = h1;
       else
         h(i,j) = h0;
@@ -70,7 +70,7 @@ function shallow2D(toPrint=0)
   qRX = zeros(3,1);
   qRY = zeros(3,1);
   lMax = 0;
-  for k=1:200
+  for k=1:400
     for i=1:nX-1
       for j=1:nY-1
         % riemann x

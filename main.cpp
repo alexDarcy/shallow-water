@@ -30,11 +30,12 @@ GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat positionLight[] = { -1.5f, 1.0f, -4.0f, 1.0f };
 
 double r = 10.0f; /* radius for the camera */
-double theta = 0; /* angle around 0y */
-double phi = Pi/8; /* angle around 0z */
+double theta = Pi/15; /* angle around 0y */
+double phi = Pi/15; /* angle around 0z */
+double yInit = 5;
 
 /* camera position */
-Vector3 cameraPos(LX/2 + r*cos(phi)*sin(theta),r*sin(phi),
+Vector3 cameraPos(LX/2 + r*cos(phi)*sin(theta),yInit+r*sin(phi),
     LZ/2 + r*cos(phi)*cos(theta));
 Vector3 verticale(0,1,0); 
 double xOrigin = -1;
@@ -62,13 +63,13 @@ void display(void)
 
 
   // Draw ground
-  glColor3f (1, 0.9, 0.7);
-  glBegin(GL_QUADS);
-  glVertex3f(-5.0f, -1.0f, -5.0f);
-  glVertex3f(-5.0f, -1.0f,  5.0f);
-  glVertex3f( 5.0f, -1.0f,  5.0f);
-  glVertex3f( 5.0f, -1.0f, -5.0f);
-  glEnd();
+  //glColor3f (1, 0.9, 0.7);
+  //glBegin(GL_QUADS);
+  //glVertex3f(-5.0f, -1.0f, -5.0f);
+  //glVertex3f(-5.0f, -1.0f,  5.0f);
+  //glVertex3f( 5.0f, -1.0f,  5.0f);
+  //glVertex3f( 5.0f, -1.0f, -5.0f);
+  //glEnd();
 
   if (t > 2.0f) // not too fast
   {
