@@ -17,7 +17,7 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
   float zC1 = Lz/3;
   float xC2 = 2*Lx/3;
   float zC2 = 2*Lz/3;
-  //float radius = Lx/15;
+  float radius = Lx/15;
   float dist1;
   float dist2;
   int i = 0;
@@ -43,8 +43,8 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
       dist1 = sqrt(dist1);
       dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
       dist2 = sqrt(dist2);
-      //if (dist1 <= radius)// || dist2 <= radius ) // water drop
-      if (x < Lx/4) // dam break
+      if (dist1 <= radius)// || dist2 <= radius ) // water drop
+      //if (x < Lx/4) // dam break
       {
         h[i] = h1;
       }
@@ -113,22 +113,22 @@ void Solver::run(float t)
 
       if (i > 0)
       {
-        if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
-        {
+        //if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
+        //{
           q1[i+j*nbX] = q1[i+j*nbX] - dt/dx*(F1[i+j*nbX]-F1[i-1+j*nbX]);//%+F1tilde(i,j)-F1tilde(i-1,j));
           q2[i+j*nbX] = q2[i+j*nbX] - dt/dx*(F2[i+j*nbX]-F2[i-1+j*nbX]);//%+F2tilde(i,j)-F2tilde(i-1,j));
           q3[i+j*nbX] = q3[i+j*nbX] - dt/dx*(F3[i+j*nbX]-F3[i-1+j*nbX]);//%+F3tilde(i,j)-F3tilde(i-1,j));
-        }
+        //}
       }
 
       if (j > 0)
       {
-        if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
-        {
+        //if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
+        //{
           q1[i+j*nbX] = q1[i+j*nbX] - dt/dz*(G1[i+j*nbX]-G1[i+j*nbX-nbX]);//%+G1tilde(i,j)-G1tilde(i,j-1));
           q2[i+j*nbX] = q2[i+j*nbX] - dt/dz*(G2[i+j*nbX]-G2[i+j*nbX-nbX]);//%+G2tilde(i,j)-G2tilde(i,j-1));
           q3[i+j*nbX] = q3[i+j*nbX] - dt/dz*(G3[i+j*nbX]-G3[i+j*nbX-nbX]);//%+G3tilde(i,j)-G3tilde(i,j-1));
-        }
+        //}
       }
     }
   }
@@ -144,12 +144,12 @@ void Solver::boundary()
   {
     i0 = 0;
     q1[i0+j*nbX] = q1[i0+1+j*nbX];// - q1[i0+2+j*nbX];
-    q2[i0+j*nbX] = q2[i0+1+j*nbX];// - q2[i0+2+j*nbX];
+    q2[i0+j*nbX] = -q2[i0+1+j*nbX];// - q2[i0+2+j*nbX];
     q3[i0+j*nbX] = q3[i0+1+j*nbX];// - q3[i0+2+j*nbX];
 
     i0 = nbX-1;
     q1[i0+j*nbX] = q1[i0+j*nbX-1];//- q1[i0+j*nbX-2];
-    q2[i0+j*nbX] = q2[i0+j*nbX-1];//- q2[i0+j*nbX-2];
+    q2[i0+j*nbX] = -q2[i0+j*nbX-1];//- q2[i0+j*nbX-2];
     q3[i0+j*nbX] = q3[i0+j*nbX-1];//- q3[i0+j*nbX-2];
 
   }
@@ -158,30 +158,30 @@ void Solver::boundary()
     j0 =0;
     q1[i+j0*nbX] = q1[i+j0*nbX+nbX];//- q1[i+j0*nbX+2*nbX];
     q2[i+j0*nbX] = q2[i+j0*nbX+nbX];//- q2[i+j0*nbX+2*nbX];
-    q3[i+j0*nbX] = q3[i+j0*nbX+nbX];//- q3[i+j0*nbX+2*nbX];
+    q3[i+j0*nbX] = -q3[i+j0*nbX+nbX];//- q3[i+j0*nbX+2*nbX];
 
     j0 = nbZ-1;
     q1[i+j0*nbX] = q1[i+j0*nbX-nbX];//- q1[i+j0*nbX-2*nbX];
     q2[i+j0*nbX] = q2[i+j0*nbX-nbX];//- q2[i+j0*nbX-2*nbX];
-    q3[i+j0*nbX] = q3[i+j0*nbX-nbX];//- q3[i+j0*nbX-2*nbX];
+    q3[i+j0*nbX] = -q3[i+j0*nbX-nbX];//- q3[i+j0*nbX-2*nbX];
   }
 
-  int i = limit;
-  for (int j =0; j < nbZ-1; j++)
-  {
-    if ((abs(j*dz-Lz/2) >= 0.5) ) // dam break
-    {
-      q1[i+j*nbX] = h1;
-    }
+  //int i = limit;
+  //for (int j =0; j < nbZ-1; j++)
+  //{
+  //  if ((abs(j*dz-Lz/2) >= 0.5) ) // dam break
+  //  {
+  //    q1[i+j*nbX] = h1;
+  //  }
 
-    if (j > 0)
-    {
-      if ((abs(j*dz-Lz/2) >= 0.5)) // dam break
-      {
-        q1[i+j*nbX] = h1;
-      }
-    }
-  }
+  //  if (j > 0)
+  //  {
+  //    if ((abs(j*dz-Lz/2) >= 0.5)) // dam break
+  //    {
+  //      q1[i+j*nbX] = h1;
+  //    }
+  //  }
+  //}
 }
 
 Vector3 Solver::riemannX(Vector3& qL,Vector3& qR)

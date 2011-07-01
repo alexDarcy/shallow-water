@@ -18,8 +18,8 @@ using namespace std;
 int nbX = 50;
 int nbZ = 50;
 int nbPoints = nbX*nbZ;
-double LX = 5; /* start from 0 */
-double LZ = 5;
+double LX = 4; /* start from 0 */
+double LZ = 4;
 int nbQuads = (nbX-1)*(nbZ-1);
 Solver* s;
 Visu* v;
@@ -35,8 +35,9 @@ double phi = Pi/15; /* angle around 0z */
 double yInit = 5;
 
 /* camera position */
-Vector3 cameraPos(LX/2 + r*cos(phi)*sin(theta),yInit+r*sin(phi),
-    LZ/2 + r*cos(phi)*cos(theta));
+Vector3 cameraPos(r*cos(phi)*sin(theta),
+  r*sin(phi), r*cos(phi)*cos(theta));
+
 Vector3 verticale(0,1,0); 
 double xOrigin = -1;
 double yOrigin = -1;
@@ -48,7 +49,6 @@ GLfloat* colors;
 GLuint* indices;
 bool showPoints = false;
 double t;
-double tmp;
 
 /* Display the scene */
 void display(void)
@@ -106,24 +106,31 @@ void display(void)
   glutPostRedisplay();
 }
 
-// When the window is created or resized
+// When the window is created 
 void ReshapeFunc(int width, int height)
 {
   glMatrixMode(GL_PROJECTION);
 
   glLoadIdentity();
-  gluPerspective(20, width / (double) height, 5, 15);
+  gluPerspective(40, width / (double) height, 1, 15);
   glViewport(0, 0, width, height);
 
   glMatrixMode(GL_MODELVIEW);
   glutPostRedisplay();
 }
 
+void updateCamera()
+{
+  cameraPos.x = r*cos(phi)*sin(theta);
+  cameraPos.y = r*sin(phi);
+  cameraPos.z = r*cos(phi)*cos(theta);
+}
+
 // When a key is hit
 void keyHit(unsigned char key, int x, int y)
 {
   /* useless */
-  tmp = x;
+  float tmp = x;
   tmp = y;
 
   switch (key)
@@ -153,9 +160,6 @@ void mouseClicked(int button, int state, int x, int y)
       yOrigin = y;
     }
   }
-
-  tmp = x;
-  tmp = y;
 }
 
 /* When the mouse is moved */
@@ -172,15 +176,10 @@ void mouseMoved(int x, int y)
     phi = max(phi, -90);
     phi = min(phi, 90);
 
-    cameraPos.y = r*sin(phi);
-    cameraPos.z = LZ/2 + r*cos(phi)*cos(theta);
-    cameraPos.x = LX/2 + r*cos(phi)*sin(theta);
+    updateCamera();
     verticale = v.crossProduct(cameraPos);
     verticale.normalize();
   }
-  tmp = x;
-  tmp = y;
-
 }
 
 void changeStackSize()
@@ -217,7 +216,9 @@ int main(int argc, char* argv[])
   glutInitWindowSize(500, 500);
   glutInitWindowPosition (100, 100); 
   glutCreateWindow("Water");
-
+   
+  //updateCamera();
+   
   glClearColor(0, 0, 0, 0);
   /* Light */
   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
