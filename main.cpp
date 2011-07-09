@@ -15,11 +15,11 @@
 using namespace std;
 
 /* Mesh data */
-int nbX = 50;
-int nbZ = 50;
+int nbX = 64;
+int nbZ = 64;
 int nbPoints = nbX*nbZ;
-double LX = 4; /* start from 0 */
-double LZ = 4;
+float LX = 4; /* start from 0 */
+float LZ = 4;
 int nbQuads = (nbX-1)*(nbZ-1);
 Solver* s;
 Visu* v;
@@ -27,33 +27,34 @@ Visu* v;
 GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
 GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-GLfloat positionLight[] = { -1.5f, 1.0f, -4.0f, 1.0f };
+GLfloat positionLight[] = { 2.f, 5.0f, 2.f, 1.0f };
 
-double r = 10.0f; /* radius for the camera */
-double theta = Pi/15; /* angle around 0y */
-double phi = Pi/15; /* angle around 0z */
-double yInit = 5;
+float r = 8.0f; /* radius for the camera */
+float theta = Pi/15; /* angle around 0y */
+float phi = Pi/7; /* angle around 0z */
+float yInit = 1.f;
 
 /* camera position */
 Vector3 cameraPos(r*cos(phi)*sin(theta),
   r*sin(phi), r*cos(phi)*cos(theta));
 
 Vector3 verticale(0,1,0); 
-double xOrigin = -1;
-double yOrigin = -1;
+float xOrigin = -1;
+float yOrigin = -1;
 Vector3 cameraDir(LX/2,0,LZ/2);
-double speed = 0.0001;
+float speed = 0.0001;
 
 /* Data display */
 GLfloat* colors;
 GLuint* indices;
-bool showPoints = false;
-double t;
+bool showLines = true;
+float t;
 
 /* Display the scene */
 void display(void)
 {
   t = glutGet (GLUT_ELAPSED_TIME) / 1000.;
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
 
@@ -62,23 +63,14 @@ void display(void)
       verticale.x,verticale.y,verticale.z);
 
 
-  // Draw ground
-  //glColor3f (1, 0.9, 0.7);
-  //glBegin(GL_QUADS);
-  //glVertex3f(-5.0f, -1.0f, -5.0f);
-  //glVertex3f(-5.0f, -1.0f,  5.0f);
-  //glVertex3f( 5.0f, -1.0f,  5.0f);
-  //glVertex3f( 5.0f, -1.0f, -5.0f);
-  //glEnd();
-
   if (t > 2.0f) // not too fast
   {
     s->run(t);
     v->updateHeight(s->q1);
   }
 
-  if (showPoints)
-    glPolygonMode (GL_FRONT_AND_BACK, GL_POINT);
+  if (showLines)
+    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
   else
     glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
@@ -97,8 +89,6 @@ void display(void)
   glDisableClientState(GL_VERTEX_ARRAY);
 
   glEnd ();
-
-  /* End */
   glFlush();
   glutSwapBuffers();
 
@@ -112,7 +102,7 @@ void ReshapeFunc(int width, int height)
   glMatrixMode(GL_PROJECTION);
 
   glLoadIdentity();
-  gluPerspective(40, width / (double) height, 1, 15);
+  gluPerspective(40, width / (float) height, 1, 15);
   glViewport(0, 0, width, height);
 
   glMatrixMode(GL_MODELVIEW);
@@ -135,8 +125,8 @@ void keyHit(unsigned char key, int x, int y)
 
   switch (key)
   {
-    case 'p' :
-      showPoints = !showPoints;
+    case 'l' :
+      showLines = !showLines;
       break;
     case 'q' :
       exit(0);
@@ -217,8 +207,6 @@ int main(int argc, char* argv[])
   glutInitWindowPosition (100, 100); 
   glutCreateWindow("Water");
    
-  //updateCamera();
-   
   glClearColor(0, 0, 0, 0);
   /* Light */
   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
@@ -228,9 +216,13 @@ int main(int argc, char* argv[])
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHTING);
   glEnable(GL_COLOR_MATERIAL);
-  glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+  //glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+  GLfloat mat_specular[] = { 1.0F,1.0F,1.0F,1.0F };
+  glMaterialfv(GL_FRONT,GL_SPECULAR,mat_specular);
+  glMateriali(GL_FRONT,GL_SHININESS,30);
 
-  /* Declaration of the callbacks */
+
+    /* Declaration of the callbacks */
   glutDisplayFunc(&display);
   glutReshapeFunc(&ReshapeFunc);
   glutKeyboardFunc(&keyHit);

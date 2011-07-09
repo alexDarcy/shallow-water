@@ -41,7 +41,8 @@ Vector3& Vector3::operator/= (const float a){
   if (a == 0)
   {
     cerr << "Division by 0" << endl;
-    exit(1);
+  //  exit(1);
+    return *this;
   }
   x /= a;
   y /= a;
@@ -68,8 +69,7 @@ Vector3 Vector3::operator* (const float a){
 }
 Vector3 Vector3::operator/ (const float a){
   Vector3 tmp = *this;
-  tmp /= a;
-  return tmp;
+  tmp /= a; return tmp;
 }
 
 float& Vector3::operator()(int i){

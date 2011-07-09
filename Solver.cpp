@@ -6,22 +6,24 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
   nbX(nX),nbZ(nZ),
   Lx(LX),Lz(LZ)
 {
+  int nbXG = nbX+2;
+  int nbZG = nbZ+2;
   dx = Lx / (nbX-1);
   dz = Lz / (nbZ-1);
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
-  h1 = 2;
+  h1 = 3;
   float h0 = 0.5;
   float xC1 = Lx/3;
   float zC1 = Lz/3;
   float xC2 = 2*Lx/3;
   float zC2 = 2*Lz/3;
-  float radius = Lx/15;
+  float radius = Lx/10;
   float dist1;
   float dist2;
   int i = 0;
-  dt = 0.01;
+  dt = 0.007;
   h = new float[nbPoints];
   u = new float[nbPoints];
   v = new float[nbPoints];
@@ -43,7 +45,7 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
       dist1 = sqrt(dist1);
       dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
       dist2 = sqrt(dist2);
-      if (dist1 <= radius)// || dist2 <= radius ) // water drop
+      if (dist1 <= radius || dist2 <= radius ) // water drop
       //if (x < Lx/4) // dam break
       {
         h[i] = h1;
@@ -73,8 +75,16 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
 }
 
 Solver::~Solver(){
+    delete[] h;
+    delete[] u;
+    delete[] v;
+    delete[] q1;
+    delete[] q2;
+    delete[] q3;
+ 
 }
 
+/* Compute flux and update Q */
 void Solver::run(float t)
 {
   t++;
@@ -135,55 +145,29 @@ void Solver::run(float t)
   boundary();
 }
 
-// extrapolate boundary conditions
+// Set boundary conditions
 void Solver::boundary()
 {
   int j0;
   int i0;
-  for (int j = 0; j < nbZ; j++)
+  /* Reflection on the boundary */
+  for (int j = 1; j < nbZ-1; j++)
   {
-    i0 = 0;
-    q1[i0+j*nbX] = q1[i0+1+j*nbX];// - q1[i0+2+j*nbX];
-    q2[i0+j*nbX] = -q2[i0+1+j*nbX];// - q2[i0+2+j*nbX];
-    q3[i0+j*nbX] = q3[i0+1+j*nbX];// - q3[i0+2+j*nbX];
-
-    i0 = nbX-1;
-    q1[i0+j*nbX] = q1[i0+j*nbX-1];//- q1[i0+j*nbX-2];
-    q2[i0+j*nbX] = -q2[i0+j*nbX-1];//- q2[i0+j*nbX-2];
-    q3[i0+j*nbX] = q3[i0+j*nbX-1];//- q3[i0+j*nbX-2];
-
+    i0 = 1;
+    q2[i0+j*nbX] = -q2[i0+1+j*nbX];
+    i0 = nbX-2;
+    q2[i0+j*nbX] = -q2[i0-1+j*nbX];
   }
   for (int i = 1; i < nbX-1; i++)
   {
-    j0 =0;
-    q1[i+j0*nbX] = q1[i+j0*nbX+nbX];//- q1[i+j0*nbX+2*nbX];
-    q2[i+j0*nbX] = q2[i+j0*nbX+nbX];//- q2[i+j0*nbX+2*nbX];
-    q3[i+j0*nbX] = -q3[i+j0*nbX+nbX];//- q3[i+j0*nbX+2*nbX];
-
-    j0 = nbZ-1;
-    q1[i+j0*nbX] = q1[i+j0*nbX-nbX];//- q1[i+j0*nbX-2*nbX];
-    q2[i+j0*nbX] = q2[i+j0*nbX-nbX];//- q2[i+j0*nbX-2*nbX];
-    q3[i+j0*nbX] = -q3[i+j0*nbX-nbX];//- q3[i+j0*nbX-2*nbX];
+    j0 = 1;
+    q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
+    j0 = nbZ-2;
+    q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
   }
-
-  //int i = limit;
-  //for (int j =0; j < nbZ-1; j++)
-  //{
-  //  if ((abs(j*dz-Lz/2) >= 0.5) ) // dam break
-  //  {
-  //    q1[i+j*nbX] = h1;
-  //  }
-
-  //  if (j > 0)
-  //  {
-  //    if ((abs(j*dz-Lz/2) >= 0.5)) // dam break
-  //    {
-  //      q1[i+j*nbX] = h1;
-  //    }
-  //  }
-  //}
 }
 
+/* Solve the riemann problem on X */
 Vector3 Solver::riemannX(Vector3& qL,Vector3& qR)
 {
   float hL = qL(1);
@@ -226,6 +210,7 @@ Vector3 Solver::riemannX(Vector3& qL,Vector3& qR)
   return F;
 }
 
+/* Solve the riemann problem on Y */
 Vector3 Solver::riemannY(Vector3& qL,Vector3& qR)
 {
   float hL = qL(1);
