@@ -28,7 +28,10 @@ class Solver
     float* G1;
     float* G2;
     float* G3;
-    float limit;
+    int damLimit;
+    int damWidth;
+    int holeWidth;
+    int holeLimit;
     float h1;
 
 

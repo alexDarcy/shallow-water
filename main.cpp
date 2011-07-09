@@ -15,9 +15,9 @@
 using namespace std;
 
 /* Mesh data */
-int nbX = 64;
-int nbZ = 64;
-int nbPoints = nbX*nbZ;
+int nbX = 61;
+int nbZ = 61;
+int nbPoints = (nbX)*(nbZ);
 float LX = 4; /* start from 0 */
 float LZ = 4;
 int nbQuads = (nbX-1)*(nbZ-1);

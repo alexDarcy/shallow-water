@@ -2,24 +2,26 @@
 
 Solver::Solver():g(9.81f){}
 
-Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
-  nbX(nX),nbZ(nZ),
-  Lx(LX),Lz(LZ)
+Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
 {
-  int nbXG = nbX+2;
-  int nbZG = nbZ+2;
-  dx = Lx / (nbX-1);
-  dz = Lz / (nbZ-1);
+  dx = LX / (nX-1);
+  dz = LZ / (nZ-1);
+
+  /* Ghost cells */
+  nbX = nX;//+2;
+  nbZ = nZ;//+2;
+  Lx = LX;//+dx; 
+  Lz = LZ;//+dz; 
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
-  h1 = 3;
+  h1 = 2;
   float h0 = 0.5;
-  float xC1 = Lx/3;
+  float xC1 = LX/3;
   float zC1 = Lz/3;
-  float xC2 = 2*Lx/3;
+  float xC2 = 2*LX/3;
   float zC2 = 2*Lz/3;
-  float radius = Lx/10;
+  float radius = LX/10;
   float dist1;
   float dist2;
   int i = 0;
@@ -33,20 +35,30 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f),
   G1 = new float[nbPoints];
   G2 = new float[nbPoints];
   G3 = new float[nbPoints];
-  limit = Lx/(4*dx);
+  /* Dam properties */
+  float damL = Lx/4;
+  float damW = 2*dx;
+  float holeL = Lz/2;
+  float holeW = 5*dz;
+  damLimit = damL / dx;
+  damWidth = damW / dx;
 
+  holeLimit = holeL / dz;
+  holeWidth = holeW / dz;
 
-  for (float z = 0; z <= Lz ; z += dz)
+  for (float z = 0 ; z <= Lz ; z += dz)
+  //for (float z = -dz ; z <= Lz ; z += dz)
   {
     for (float x = 0; x <= Lx ; x += dx)
+    //for (float x = -dx; x <= Lx ; x += dx)
     {
 
       dist1 = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
       dist1 = sqrt(dist1);
       dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
       dist2 = sqrt(dist2);
-      if (dist1 <= radius || dist2 <= radius ) // water drop
-      //if (x < Lx/4) // dam break
+      //if (dist1 <= radius || dist2 <= radius ) // water drop
+      if (x < damL+damW/2) // dam break
       {
         h[i] = h1;
       }
@@ -116,33 +128,32 @@ void Solver::run(float t)
     }
   }
 
+  bool cond;
   for (int j =0; j < nbZ-1; j++)
   {
     for (int i =0; i < nbX-1; i++)
     {
+      // dam break
+      //cond = (abs(i - damLimit) <= damWidth) && (abs(j-holeLimit) <= holeWidth); 
+      cond = (abs(j-holeLimit) <= holeWidth); 
+      cond = cond || (abs(i - damLimit) > damWidth); 
 
-      if (i > 0)
+      if (cond) 
       {
-        //if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
-        //{
-          q1[i+j*nbX] = q1[i+j*nbX] - dt/dx*(F1[i+j*nbX]-F1[i-1+j*nbX]);//%+F1tilde(i,j)-F1tilde(i-1,j));
-          q2[i+j*nbX] = q2[i+j*nbX] - dt/dx*(F2[i+j*nbX]-F2[i-1+j*nbX]);//%+F2tilde(i,j)-F2tilde(i-1,j));
-          q3[i+j*nbX] = q3[i+j*nbX] - dt/dx*(F3[i+j*nbX]-F3[i-1+j*nbX]);//%+F3tilde(i,j)-F3tilde(i-1,j));
-        //}
-      }
+        if (i > 0 && j > 0)
+        {
+          q1[i+j*nbX] = q1[i+j*nbX] - dt/dx*(F1[i+j*nbX]-F1[i-1+j*nbX]);
+          q2[i+j*nbX] = q2[i+j*nbX] - dt/dx*(F2[i+j*nbX]-F2[i-1+j*nbX]);
+          q3[i+j*nbX] = q3[i+j*nbX] - dt/dx*(F3[i+j*nbX]-F3[i-1+j*nbX]);
 
-      if (j > 0)
-      {
-        //if ((abs(j*dz-Lz/2) < 0.5) || i < limit || i > limit+1) // dam break
-        //{
-          q1[i+j*nbX] = q1[i+j*nbX] - dt/dz*(G1[i+j*nbX]-G1[i+j*nbX-nbX]);//%+G1tilde(i,j)-G1tilde(i,j-1));
-          q2[i+j*nbX] = q2[i+j*nbX] - dt/dz*(G2[i+j*nbX]-G2[i+j*nbX-nbX]);//%+G2tilde(i,j)-G2tilde(i,j-1));
-          q3[i+j*nbX] = q3[i+j*nbX] - dt/dz*(G3[i+j*nbX]-G3[i+j*nbX-nbX]);//%+G3tilde(i,j)-G3tilde(i,j-1));
-        //}
+          q1[i+j*nbX] = q1[i+j*nbX] - dt/dz*(G1[i+j*nbX]-G1[i+(j-1)*nbX]);
+          q2[i+j*nbX] = q2[i+j*nbX] - dt/dz*(G2[i+j*nbX]-G2[i+(j-1)*nbX]);
+          q3[i+j*nbX] = q3[i+j*nbX] - dt/dz*(G3[i+j*nbX]-G3[i+(j-1)*nbX]);
+        }
       }
     }
   }
-  boundary();
+//  boundary();
 }
 
 // Set boundary conditions
@@ -150,21 +161,33 @@ void Solver::boundary()
 {
   int j0;
   int i0;
-  /* Reflection on the boundary */
-  for (int j = 1; j < nbZ-1; j++)
-  {
-    i0 = 1;
-    q2[i0+j*nbX] = -q2[i0+1+j*nbX];
-    i0 = nbX-2;
-    q2[i0+j*nbX] = -q2[i0-1+j*nbX];
-  }
-  for (int i = 1; i < nbX-1; i++)
-  {
-    j0 = 1;
-    q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
-    j0 = nbZ-2;
-    q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
-  }
+  /* Fix the dam */
+ // int i1 = damLimit;//-damWidth/2;
+ // int i2 = damLimit;//+damWidth/2;
+ // for (int i = i1; i <= i2; i++)
+ // {
+ //   for (int j = 0; j < nbZ; j++)
+ //     if (abs(j-holeLimit) > holeWidth)
+ //     {
+ //       q1[i+j*nbX] = h1;
+ //     }
+ // }
+
+ // /* Reflection on the boundary */
+ // for (int j = 1; j < nbZ-1; j++)
+ // {
+ //   i0 = 1;
+ //   q2[i0+j*nbX] = -q2[i0+1+j*nbX];
+ //   i0 = nbX-2;
+ //   q2[i0+j*nbX] = -q2[i0-1+j*nbX];
+ // }
+ // for (int i = 1; i < nbX-1; i++)
+ // {
+ //   j0 = 1;
+ //   q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
+ //   j0 = nbZ-2;
+ //   q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
+ // }
 }
 
 /* Solve the riemann problem on X */
