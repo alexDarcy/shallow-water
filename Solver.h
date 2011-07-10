@@ -33,22 +33,27 @@ class Solver
     int holeWidth;
     int holeLimit;
     float h1;
+    float h0 ;
     bool isDamBreak;
-
+    bool isWaterDrop;
+    bool isTsunami;
+    float xC1;
+    float zC1;
+    float xC2;
+    float zC2;
+    float radius;
+    void boundary();
+    void addDrops(float t);
+    float phi(float lambda);
+    Vector3 riemannX(Vector3& qL,Vector3& qR);
+    Vector3 riemannY(Vector3& qL,Vector3& qR);
 
   public:
     Solver();
     Solver(float Lx,float dx, float Lz,float dz);
     void run(float t);
-    void boundary();
-    Vector3 riemannX(Vector3& qL,Vector3& qR);
-    Vector3 riemannY(Vector3& qL,Vector3& qR);
-    float phi(float lambda);
-    ~Solver();
+        ~Solver();
 
-    float* h;
-    float* u;
-    float* v;
     float* q1;
     float* q2;
     float* q3;

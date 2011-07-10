@@ -197,7 +197,7 @@ void changeStackSize()
 int main(int argc, char* argv[])
 {
   s = new Solver(LX,nbX,LZ,nbZ);
-  v = new Visu(s->h,LX,nbX,LZ,nbZ);
+  v = new Visu(s->q1,LX,nbX,LZ,nbZ);
 
   /* Creation of the window */
   glutInit(&argc, argv);

@@ -4,6 +4,10 @@ Solver::Solver():g(9.81f){}
 
 Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
 {
+  isDamBreak = true;
+  isWaterDrop = false;//true;
+  isTsunami= false;
+
   dx = LX / (nX-1);
   dz = LZ / (nZ-1);
 
@@ -15,20 +19,21 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
-  h1 = 2;
-  float h0 = 0.5;
-  float xC1 = LX/3;
-  float zC1 = Lz/3;
-  float xC2 = 2*LX/3;
-  float zC2 = 2*Lz/3;
-  float radius = LX/10;
+  if (isDamBreak)
+    h1 = 2;
+  else
+    h1 = 3;
+
+  h0 = 0.5;
+  xC1 = LX/3;
+  zC1 = Lz/3;
+  xC2 = 2*LX/3;
+  zC2 = 2*Lz/3;
+  radius = LX/10;
   float dist1;
   float dist2;
   int i = 0;
   dt = 0.007;
-  h = new float[nbPoints];
-  u = new float[nbPoints];
-  v = new float[nbPoints];
   F1 = new float[nbPoints];
   F2 = new float[nbPoints];
   F3 = new float[nbPoints];
@@ -36,7 +41,6 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   G2 = new float[nbPoints];
   G3 = new float[nbPoints];
   /* Dam properties */
-  isDamBreak = true;
   float damL = Lx/4;
   float damW = 2*dx;
   float holeL = Lz/2;
@@ -48,51 +52,49 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   holeWidth = holeW / dz;
   bool cond;
 
+  q1 = new float[nbPoints];
+  q2 = new float[nbPoints];
+  q3 = new float[nbPoints];
+
   for (float z = -dz ; z <= Lz ; z += dz)
   {
     for (float x = -dx; x <= Lx ; x += dx)
     {
-      dist1 = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
-      dist1 = sqrt(dist1);
-      dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
-      dist2 = sqrt(dist2);
       if (isDamBreak)
-        cond = x < damL+damW/2;
-      else
-        // water drop
-        cond =dist1 <= radius || dist2 <= radius ; 
+      {
+        //cout << i << " " << damLimit << " " << damWidth << endl;
+        cond = (i % nbX) <= damLimit+damWidth;
+      }
+      else if (isWaterDrop)
+      {
+        dist1 = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
+        dist1 = sqrt(dist1);
+        dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
+        dist2 = sqrt(dist2);
+
+        cond =dist1 <= radius;// || dist2 <= radius ; 
+      }
+      else 
+        cond = false;
+
       if (cond) 
       {
-        h[i] = h1;
+        q1[i] = h1;
       }
       else
       {
-        h[i] = h0;
+        q1[i] = h0;
       }
 
-      u[i] = 0;
-      v[i] = 0;
+      q2[i] = 0;
+      q3[i] = 0;
 
       i++;
     }
   }
-  q1 = new float[nbPoints];
-  q2 = new float[nbPoints];
-  q3 = new float[nbPoints];
-  for (int i =0; i < nbPoints; i++)
-  {
-    q1[i] = h[i];
-    q2[i] = u[i]*h[i];
-    q3[i] = v[i]*h[i];
-  }
-
-
 }
 
 Solver::~Solver(){
-    delete[] h;
-    delete[] u;
-    delete[] v;
     delete[] q1;
     delete[] q2;
     delete[] q3;
@@ -102,7 +104,6 @@ Solver::~Solver(){
 /* Compute flux and update Q */
 void Solver::run(float t)
 {
-  t++;
   Vector3 qL, qRX, qRY;
   for (int j =0; j < nbZ-1; j++)
   {
@@ -141,8 +142,8 @@ void Solver::run(float t)
       // dam break
       if (isDamBreak)
       {
-        cond = (abs(j-holeLimit) <= holeWidth); 
-        cond1 = i > damLimit + damWidth +1; // bottom of the dam
+        cond = (abs(j-holeLimit) <= holeWidth*0.5); 
+        cond1 = i > damLimit + damWidth+1 ; // bottom of the dam
         cond2 = i < damLimit - damWidth; 
         cond = cond || cond1 || cond2;
       }
@@ -164,7 +165,10 @@ void Solver::run(float t)
       }
     }
   }
-//  boundary();
+
+  boundary();
+  if (isWaterDrop)
+    addDrops(t);
 }
 
 // Set boundary conditions
@@ -172,21 +176,77 @@ void Solver::boundary()
 {
   int j0;
   int i0;
+  float dh = (h1-h0)/10;
+  float up = 1.f;
 
-  /* Reflection on the boundary */
-  for (int j = 1; j < nbZ-1; j++)
+  float mean = 0;
+  
+  for (int j = 0; j < nbZ; j++)
+    mean += q1[j*nbX];
+
+  mean /= nbZ;
+
+  if (isTsunami)
   {
-    i0 = 1;
-    q2[i0+j*nbX] = -q2[i0+1+j*nbX];
-    i0 = nbX-2;
-    q2[i0+j*nbX] = -q2[i0-1+j*nbX];
+    if (up > 0 && mean >= h1)
+      up = -1.f;
+    else if (up < 0 && mean <= h0)
+      up = 1.f;
+    
+    for (int j = 0; j < nbZ; j++)
+    {
+        q1[j*nbX] += dh*up;
+    }
   }
-  for (int i = 1; i < nbX-1; i++)
+  else if (isWaterDrop)
   {
-    j0 = 1;
-    q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
-    j0 = nbZ-2;
-    q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
+    /* Reflection on the boundary */
+    for (int j = 1; j < nbZ-1; j++)
+    {
+      i0 = 1;
+      q2[i0+j*nbX] = -q2[i0+1+j*nbX];
+      i0 = nbX-2;
+      q2[i0+j*nbX] = -q2[i0-1+j*nbX];
+    }
+    for (int i = 1; i < nbX-1; i++)
+    {
+      j0 = 1;
+      q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
+      j0 = nbZ-2;
+      q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
+    }
+  }
+  else
+  {
+    i0 = nbX-1;
+    for (int j = 0; j < nbZ; j++)
+    {
+      q1[i0+j*nbX] = q1[i0+j*nbX-1];
+      q2[i0+j*nbX] = q2[i0+j*nbX-1];
+      q3[i0+j*nbX] = q3[i0+j*nbX-1];
+    }
+  }
+}
+
+void Solver::addDrops(float t)
+{
+  float latency = 2.f;
+  float precision = 1e-2f;
+  float tmp = t - (int) t;
+  //cout << t << " / " << tmp << endl;
+  if (tmp < precision)
+  {
+    int iC = xC1/dx;
+    int jC = zC1/dz;
+    int iWidth = radius/dx;
+    int jWidth = radius/dz;
+    for (int i = iC-iWidth/2; i<= iC+iWidth/2; i++)
+      for (int j = jC-jWidth/2; j<= jC+jWidth/2; j++)
+      {
+        q1[i+j*nbX] = h1;
+        q2[i+j*nbX] = 0;
+        q3[i+j*nbX] = 0;
+      }
   }
 }
 
