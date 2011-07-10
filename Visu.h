@@ -12,7 +12,6 @@ class Visu
     int nbX;
     int nbZ;
     int nbPoints;
-    int nbQuads;
     float Lx;
     float Lz;
     float dx;
@@ -33,6 +32,7 @@ class Visu
     float* normals;
     int* indices;
     float* colors;
+    int nbQuads;
 };
 
 #endif

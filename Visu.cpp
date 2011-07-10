@@ -2,16 +2,16 @@
 
 Visu::Visu(float* &H, float LX,float nX, float LZ,float nZ)
 {
-  nbX = nX;//+2;
-  nbZ = nZ;//+2;
+  nbX = nX;
+  nbZ = nZ;
 
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
   dx = LX / (nX-1);
   dz = LZ / (nZ-1);
-  Lx = LX;//+dx;
-  Lz = LZ;//+dz;
+  Lx = LX;
+  Lz = LZ;
 
   vertices = new float[3*nbPoints];
   normals = new float[3*nbPoints];
@@ -21,23 +21,19 @@ Visu::Visu(float* &H, float LX,float nX, float LZ,float nZ)
   int i = 0;
 
   /* Remove ghost cells */
-  int j = 0;//nbX+3;
+  int j = nbX+3;
 
-  //for (float z = -dz ; z <= Lz ; z += dz)
   for (float z = 0; z <= Lz; z += dz)
   {
-//    for (float x = -dx; x <= Lx ; x += dx)
-
     for (float x = 0; x <= Lx; x += dx)
     {
+      if ((j+1) % (nbX+2) == 0)
+        j += 2;
+
       vertices[3*i] = x;
       vertices[3*i+1] = H[j];
       vertices[3*i+2] = z;
-      //if (j % (nbX+1) == nbX)
-      //  j += 3;
-      //else
-        j++;
-
+      j++;
       i++;
 
     }
@@ -123,15 +119,15 @@ void Visu::computeIndices()
 
 void Visu::updateHeight(float* &H)
 {
-  int j = 0;//nbX+3;
-  /* No ghost cells */
+  int j = nbX+3;
+  /* Remove ghost cells */
   for (int i = 0; i < nbPoints; i++)
   {
+    if ((j+1) % (nbX+2) == 0)
+      j += 2;
+
     vertices[3*i+1] = H[j];
-    //if (j % (nbX+1) == nbX)
-    //  j += 3;
-    //else
-      j++;
+    j++;
 
   }
 

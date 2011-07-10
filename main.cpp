@@ -15,12 +15,11 @@
 using namespace std;
 
 /* Mesh data */
-int nbX = 61;
-int nbZ = 61;
-int nbPoints = (nbX)*(nbZ);
-float LX = 4; /* start from 0 */
+int nbX = 63;
+int nbZ = 63;
+/* domain = [0,LX]x[0,LZ] */
+float LX = 4; 
 float LZ = 4;
-int nbQuads = (nbX-1)*(nbZ-1);
 Solver* s;
 Visu* v;
 
@@ -81,7 +80,7 @@ void display(void)
   glVertexPointer(3, GL_FLOAT, 0, v->vertices);
   glNormalPointer(GL_FLOAT, 0, v->normals);
   glColorPointer(3, GL_FLOAT, 0, v->colors);
-  glDrawElements(GL_QUADS, nbQuads*4, GL_UNSIGNED_INT, v->indices);
+  glDrawElements(GL_QUADS, v->nbQuads*4, GL_UNSIGNED_INT, v->indices);
 
 
   glDisableClientState(GL_COLOR_ARRAY);

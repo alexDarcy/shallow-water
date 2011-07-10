@@ -8,10 +8,10 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   dz = LZ / (nZ-1);
 
   /* Ghost cells */
-  nbX = nX;//+2;
-  nbZ = nZ;//+2;
-  Lx = LX;//+dx; 
-  Lz = LZ;//+dz; 
+  nbX = nX+2;
+  nbZ = nZ+2;
+  Lx = LX+dx; 
+  Lz = LZ+dz; 
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
@@ -36,6 +36,7 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   G2 = new float[nbPoints];
   G3 = new float[nbPoints];
   /* Dam properties */
+  isDamBreak = true;
   float damL = Lx/4;
   float damW = 2*dx;
   float holeL = Lz/2;
@@ -45,20 +46,22 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
 
   holeLimit = holeL / dz;
   holeWidth = holeW / dz;
+  bool cond;
 
-  for (float z = 0 ; z <= Lz ; z += dz)
-  //for (float z = -dz ; z <= Lz ; z += dz)
+  for (float z = -dz ; z <= Lz ; z += dz)
   {
-    for (float x = 0; x <= Lx ; x += dx)
-    //for (float x = -dx; x <= Lx ; x += dx)
+    for (float x = -dx; x <= Lx ; x += dx)
     {
-
       dist1 = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
       dist1 = sqrt(dist1);
       dist2 = (x-xC2)*(x-xC2) + (z-zC2)*(z-zC2);
       dist2 = sqrt(dist2);
-      //if (dist1 <= radius || dist2 <= radius ) // water drop
-      if (x < damL+damW/2) // dam break
+      if (isDamBreak)
+        cond = x < damL+damW/2;
+      else
+        // water drop
+        cond =dist1 <= radius || dist2 <= radius ; 
+      if (cond) 
       {
         h[i] = h1;
       }
@@ -129,14 +132,22 @@ void Solver::run(float t)
   }
 
   bool cond;
+  bool cond1;
+  bool cond2;
   for (int j =0; j < nbZ-1; j++)
   {
     for (int i =0; i < nbX-1; i++)
     {
       // dam break
-      //cond = (abs(i - damLimit) <= damWidth) && (abs(j-holeLimit) <= holeWidth); 
-      cond = (abs(j-holeLimit) <= holeWidth); 
-      cond = cond || (abs(i - damLimit) > damWidth); 
+      if (isDamBreak)
+      {
+        cond = (abs(j-holeLimit) <= holeWidth); 
+        cond1 = i > damLimit + damWidth +1; // bottom of the dam
+        cond2 = i < damLimit - damWidth; 
+        cond = cond || cond1 || cond2;
+      }
+      else 
+        cond = true;
 
       if (cond) 
       {
@@ -161,33 +172,22 @@ void Solver::boundary()
 {
   int j0;
   int i0;
-  /* Fix the dam */
- // int i1 = damLimit;//-damWidth/2;
- // int i2 = damLimit;//+damWidth/2;
- // for (int i = i1; i <= i2; i++)
- // {
- //   for (int j = 0; j < nbZ; j++)
- //     if (abs(j-holeLimit) > holeWidth)
- //     {
- //       q1[i+j*nbX] = h1;
- //     }
- // }
 
- // /* Reflection on the boundary */
- // for (int j = 1; j < nbZ-1; j++)
- // {
- //   i0 = 1;
- //   q2[i0+j*nbX] = -q2[i0+1+j*nbX];
- //   i0 = nbX-2;
- //   q2[i0+j*nbX] = -q2[i0-1+j*nbX];
- // }
- // for (int i = 1; i < nbX-1; i++)
- // {
- //   j0 = 1;
- //   q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
- //   j0 = nbZ-2;
- //   q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
- // }
+  /* Reflection on the boundary */
+  for (int j = 1; j < nbZ-1; j++)
+  {
+    i0 = 1;
+    q2[i0+j*nbX] = -q2[i0+1+j*nbX];
+    i0 = nbX-2;
+    q2[i0+j*nbX] = -q2[i0-1+j*nbX];
+  }
+  for (int i = 1; i < nbX-1; i++)
+  {
+    j0 = 1;
+    q2[i+j0*nbX] = -q2[i+(j0+1)*nbX];
+    j0 = nbZ-2;
+    q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
+  }
 }
 
 /* Solve the riemann problem on X */

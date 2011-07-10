@@ -33,6 +33,7 @@ class Solver
     int holeWidth;
     int holeLimit;
     float h1;
+    bool isDamBreak;
 
 
   public:
