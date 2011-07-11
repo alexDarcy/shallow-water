@@ -42,6 +42,8 @@ class Solver
     float xC2;
     float zC2;
     float radius;
+    float up ;
+    int time;
     void boundary();
     void addDrops(float t);
     float phi(float lambda);

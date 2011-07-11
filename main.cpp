@@ -18,8 +18,8 @@ using namespace std;
 int nbX = 63;
 int nbZ = 63;
 /* domain = [0,LX]x[0,LZ] */
-float LX = 4; 
-float LZ = 4;
+float LX = 7; 
+float LZ = 7;
 Solver* s;
 Visu* v;
 
@@ -28,7 +28,7 @@ GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
 GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat positionLight[] = { 2.f, 5.0f, 2.f, 1.0f };
 
-float r = 8.0f; /* radius for the camera */
+float r = 14.0f; /* radius for the camera */
 float theta = Pi/15; /* angle around 0y */
 float phi = Pi/7; /* angle around 0z */
 float yInit = 1.f;
@@ -62,7 +62,7 @@ void display(void)
       verticale.x,verticale.y,verticale.z);
 
 
-  if (t > 2.0f) // not too fast
+  if (t > 3.0f) // not too fast
   {
     s->run(t);
     v->updateHeight(s->q1);

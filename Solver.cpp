@@ -4,10 +4,23 @@ Solver::Solver():g(9.81f){}
 
 Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
 {
-  isDamBreak = true;
-  isWaterDrop = false;//true;
+  int choice=1;
+  isDamBreak = false;
+  isWaterDrop = false;
   isTsunami= false;
 
+  switch (choice)
+  {
+    case 1:
+      isWaterDrop= true;
+      break;
+    case 2:
+      isDamBreak = true;
+      break;
+    case 3:
+      isTsunami= true;
+      break;
+  }
   dx = LX / (nX-1);
   dz = LZ / (nZ-1);
 
@@ -19,8 +32,8 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
   nbPoints = nbX*nbZ;
   nbQuads = (nbX-1)*(nbZ-1);
 
-  if (isDamBreak)
-    h1 = 2;
+  if (isWaterDrop)
+    h1 = 5;
   else
     h1 = 3;
 
@@ -50,6 +63,9 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
 
   holeLimit = holeL / dz;
   holeWidth = holeW / dz;
+
+  /* Tsunami properties */
+  up = 1;
   bool cond;
 
   q1 = new float[nbPoints];
@@ -61,10 +77,8 @@ Solver::Solver(float LX,float nX, float LZ,float nZ):g(9.81f)
     for (float x = -dx; x <= Lx ; x += dx)
     {
       if (isDamBreak)
-      {
-        //cout << i << " " << damLimit << " " << damWidth << endl;
         cond = (i % nbX) <= damLimit+damWidth;
-      }
+
       else if (isWaterDrop)
       {
         dist1 = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
@@ -104,6 +118,7 @@ Solver::~Solver(){
 /* Compute flux and update Q */
 void Solver::run(float t)
 {
+  time++;
   Vector3 qL, qRX, qRY;
   for (int j =0; j < nbZ-1; j++)
   {
@@ -152,12 +167,16 @@ void Solver::run(float t)
 
       if (cond) 
       {
-        if (i > 0 && j > 0)
+        if (i > 0)
         {
           q1[i+j*nbX] = q1[i+j*nbX] - dt/dx*(F1[i+j*nbX]-F1[i-1+j*nbX]);
           q2[i+j*nbX] = q2[i+j*nbX] - dt/dx*(F2[i+j*nbX]-F2[i-1+j*nbX]);
           q3[i+j*nbX] = q3[i+j*nbX] - dt/dx*(F3[i+j*nbX]-F3[i-1+j*nbX]);
+        }
 
+
+        if (j > 0)
+        {
           q1[i+j*nbX] = q1[i+j*nbX] - dt/dz*(G1[i+j*nbX]-G1[i+(j-1)*nbX]);
           q2[i+j*nbX] = q2[i+j*nbX] - dt/dz*(G2[i+j*nbX]-G2[i+(j-1)*nbX]);
           q3[i+j*nbX] = q3[i+j*nbX] - dt/dz*(G3[i+j*nbX]-G3[i+(j-1)*nbX]);
@@ -176,26 +195,49 @@ void Solver::boundary()
 {
   int j0;
   int i0;
-  float dh = (h1-h0)/10;
-  float up = 1.f;
 
-  float mean = 0;
-  
-  for (int j = 0; j < nbZ; j++)
-    mean += q1[j*nbX];
-
-  mean /= nbZ;
-
-  if (isTsunami)
+  if (isTsunami)// && time % 10 == 0)
   {
-    if (up > 0 && mean >= h1)
-      up = -1.f;
-    else if (up < 0 && mean <= h0)
+    float mean = 0;
+    float dh = (h1-h0)/20;
+
+    for (int j = 0; j < nbZ; j++)
+      mean += q1[j*nbX];
+    mean /= nbZ;
+
+    if (mean > h1)
+      up = -1;
+    else if (mean < h0)
       up = 1.f;
-    
+
     for (int j = 0; j < nbZ; j++)
     {
         q1[j*nbX] += dh*up;
+    }
+    j0 = 0;
+    for (int i = 0; i < nbZ; i++)
+    {
+      q1[i+j0*nbX] = q1[i+(j0+1)*nbX];
+      q2[i+j0*nbX] = q2[i+(j0+1)*nbX];
+      q3[i+j0*nbX] = q3[i+(j0+1)*nbX];
+    }
+    j0 = nbZ-1;
+    for (int i = 0; i < nbZ; i++)
+    {
+      q1[i+j0*nbX] = q1[i+(j0-1)*nbX];
+      q2[i+j0*nbX] = q2[i+(j0-1)*nbX];
+      q3[i+j0*nbX] = q3[i+(j0-1)*nbX];
+    }
+
+  }
+  else if (isDamBreak)
+  {
+    i0 = nbX-1;
+    for (int j = 0; j < nbZ; j++)
+    {
+      q1[i0+j*nbX] = q1[i0+j*nbX-1];
+      q2[i0+j*nbX] = q2[i0+j*nbX-1];
+      q3[i0+j*nbX] = q3[i0+j*nbX-1];
     }
   }
   else if (isWaterDrop)
@@ -216,36 +258,38 @@ void Solver::boundary()
       q2[i+j0*nbX] = -q2[i+(j0-1)*nbX];
     }
   }
-  else
-  {
-    i0 = nbX-1;
-    for (int j = 0; j < nbZ; j++)
-    {
-      q1[i0+j*nbX] = q1[i0+j*nbX-1];
-      q2[i0+j*nbX] = q2[i0+j*nbX-1];
-      q3[i0+j*nbX] = q3[i0+j*nbX-1];
-    }
-  }
 }
 
 void Solver::addDrops(float t)
 {
-  float latency = 2.f;
+  float latency = 1.f;
   float precision = 1e-2f;
+  float x;
+  float z;
+  float dist;
+  /* random */
   float tmp = t - (int) t;
-  //cout << t << " / " << tmp << endl;
   if (tmp < precision)
   {
     int iC = xC1/dx;
     int jC = zC1/dz;
     int iWidth = radius/dx;
     int jWidth = radius/dz;
-    for (int i = iC-iWidth/2; i<= iC+iWidth/2; i++)
-      for (int j = jC-jWidth/2; j<= jC+jWidth/2; j++)
+    for (int i = iC-iWidth; i<= iC+iWidth; i++)
+      for (int j = jC-jWidth; j<= jC+jWidth; j++)
       {
-        q1[i+j*nbX] = h1;
-        q2[i+j*nbX] = 0;
-        q3[i+j*nbX] = 0;
+        x = i*dx;
+        z = j*dz;
+        dist = (x-xC1)*(x-xC1) + (z-zC1)*(z-zC1);
+        dist = sqrt(dist);
+
+        if (dist <= radius)
+        {
+
+          q1[i+j*nbX] = h1;
+          q2[i+j*nbX] = 0;
+          q3[i+j*nbX] = 0;
+        }
       }
   }
 }

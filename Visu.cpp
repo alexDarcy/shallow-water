@@ -95,8 +95,8 @@ void Visu::computeColors()
 {
   for (int i = 0; i < nbPoints*3 ; i+= 3)
   {
-    colors[i] = 0;
-    colors[i+1] = 0;
+    colors[i] = 0.5f;
+    colors[i+1] = 0.8f;
     colors[i+2] = 1.0f;
   }
 }
