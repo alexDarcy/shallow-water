@@ -1,2 +1,0 @@
-#!/bin/bash
-ffmpeg -qscale 1 -b 9600 -f image2 -i f%d.png -b 1800 solution.mp4
