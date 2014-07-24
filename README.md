@@ -1,4 +1,4 @@
-Solve the shallow-water equations with a finite-volume scheme.
+Solve the 2D shallow-water equations with a finite-volume scheme.
 A Riemann solver is used.
 
 This is a small prototype, with a custom OpenGL visualization (a bit buggy).
